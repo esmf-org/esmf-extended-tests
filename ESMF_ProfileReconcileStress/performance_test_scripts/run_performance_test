@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# submit Reconcile profiling jobs
+#
+
+SRCDIR="/glade/u/home/rokuingh/external-demos/ESMF_ReconcileStress"
+PFXSRCDIR="$SRCDIR/performance_test_scripts"
+CFSRCDIR="$SRCDIR/Runs/Cheyenne-Run001/Config-010000"
+ROOTDIR="/glade/work/rokuingh/ReconcilePerformanceResults"
+# uncomment the following lines to test in non-Cheyenne environment
+# SRCDIR="/home/ryan/sandbox/external-demos/ESMF_ReconcileStress"
+# ROOTDIR="/home/ryan/ReconcilePerformanceResults"
+# PFXSRCDIR="$SRCDIR/performance_test_scripts"
+# CFSRCDIR="$SRCDIR/Runs/Cheyenne-Run001/Config-010000"
+
+
+# create EXECDIR
+EXECDIR=$(python $PFXSRCDIR/run_generate_id.py $ROOTDIR 2>&1)
+mkdir $EXECDIR
+cd $EXECDIR
+
+procs=(00036 00072 00144 00288 01152 04608 18432 73728)
+
+for pnum in "${procs[@]}"
+do
+  cd $EXECDIR
+  mkdir $pnum
+  cd "$pnum"
+  nnum=$(( 10#$pnum/36 ))
+  sed "s&%np%&$pnum&g; s&%nn%&$nnum&g; s&%esmf_lib%&$ESMF_LIB&g" $PFXSRCDIR/reconcile_eval_run_pbs > reconcile_eval_run_pbs
+  cp $SRCDIR/ESMF_ReconcileStress .
+  cp $CFSRCDIR/stressP0$pnum-010000.config .
+  # uncomment the following line to test in non-Cheyenne environment
+  qsub reconcile_eval_run_pbs
+  # echo "qsub reconcile_eval_run_pbs in $EXECDIR/$pnum"
+done
+
+# cd $EXECDIR
+# for pnum in "${procs[@]}"
+# do
+#   python ../../collect_timing_reports.py "$pnum"
+#   python ../../collect_memory_reports.py "$pnum"
+# done

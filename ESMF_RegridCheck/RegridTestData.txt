@@ -1,0 +1,44 @@
+# $Id$
+
+# Input data for the ESMF_RegridCheck external demo
+
+# total number of test cases
+19
+
+# source_grid : destination_grid : method : srcvar : dstvar : options :  MeanRelErr : MaxRelErr
+
+# UGRID to UGRID on node
+BT42_ugrid.nc : BT42_ugrid_dual.nc : bilinear : nodedata : nodedata : --dst_loc corner : 10E-04 : 10E-03
+BT42_ugrid.nc : BT42_ugrid_dual.nc : patch : nodedata : nodedata1 : : 10E-04 : 10E-04
+
+#UGRID to CF Tile
+BT42_ugrid.nc : GRIDSPEC_2.5.nc : bilinear : nodedata : nodedata : : 10E-04 : 10E-03
+BT42_ugrid.nc : GRIDSPEC_2.5.nc : conserve : elmtdata : elmtdata : : 10E-04 : 10E-03
+
+#CF Tile to CF Tile
+GRIDSPEC_1x1_time.nc : GRIDSPEC_2.5_time.nc : patch : so : so : -i : 10E-06 : 10E-04
+GRIDSPEC_1x1_time.nc : GRIDSPEC_2.5_time.nc : neareststod : so : so : -i : 10E-04 : 10E-03
+GRIDSPEC_2.5_time.nc : GRIDSPEC_1x1_time.nc : nearestdtos : so : so1 : -i : 10E-09 : 10E-08
+
+#UGRID to CF Tile
+FVCOM_grid2d_test.nc : GRIDSPEC_1140x690.nc : patch : zeta : zeta : -i -r : 10E-07 : 10E-06
+FVCOM_grid2d_test.nc : GRIDSPEC_1140x690.nc : conserve : ua,va : ua,va : -i -r: 10E-04 : 10E-03
+FVCOM_grid2d_test.nc : GRIDSPEC_1140x690.nc : bilinear : ua,va : ua,va : -i -r : 10E-07 : 10E-06
+
+#UGRID to UGRID
+FVCOM_grid2d_test.nc : ADCIRC_grid2d.nc : patch : zeta : zeta : --dst_loc corner -i : 10E-08 : 10E-06
+ADCIRC_grid2d.nc : FVCOM_grid2d_test.nc : bilinear : pressure : pressure : -i : 10E-08 : 10E-06
+ADCIRC_grid2d.nc : FVCOM_grid2d_test.nc : neareststod : pressure : pressure1 : --dst_loc corner -i : 10E-08 : 10E-04
+
+# CF Tile to UGRID
+GRIDSPEC_1140x690.nc : FVCOM_grid2d_test.nc : conserve2nd : so : so : -r : 10E-06 : 10E-04
+GRIDSPEC_1140x690.nc : FVCOM_grid2d_test.nc : bilinear : so : so1 : --dst_loc corner -r : 10E-08 : 10E-07
+
+#GRIDSPEC MOSAIC to CF Tile
+wgettar C48_mosaic_data.tar
+C48_mosaic.nc : GRIDSPEC_1x1_time.nc : bilinear : area_land : area_land : --srcdatafile mosaictest --tilefile_path ./input/ : 10E-04 : 10E-04
+C48_mosaic.nc : GRIDSPEC_1x1_time.nc : conserve2nd : evap_land : evap_land : --srcdatafile mosaictest --tilefile_path ./input/ : 10E-05 : 10E-03
+C48_mosaic.nc : GRIDSPEC_1x1_time.nc : conserve : area_land,evap_land : var2d,var3d : --srcdatafile mosaictest --tilefile_path ./input/ : 10E-04 : 10E-03
+
+# CF Tile to GRIDSPEC MOSAIC
+GRIDSPEC_1x1_time.nc : C48_mosaic.nc :  bilinear : so : so : -i --dstdatafile mosaictest --tilefile_path ./input/ : 10E-05 : 10E-04

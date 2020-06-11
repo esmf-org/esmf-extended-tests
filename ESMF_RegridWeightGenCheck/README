@@ -1,0 +1,42 @@
+$Id$
+===============================================================================
+
+                        README - ESMF_RegridWeightGenCheck
+
+                    Earth System Modeling Framework (ESMF)
+
+================================================================================
+
+Hello, this is the README file for the ESMF_RegridWeightGenCheck external demo.
+This demo runs the ESMF_RegridWeightGen application in ESMF on several sets
+of grid files.  It also validates the resulting weight file against an analytic
+field by checking for interpolation and conservation errors.
+
+ESMF must be built and installed for this testing application to run properly.
+
+The ESMF library must be built with NetCDF support.
+
+If the ESMF library has already been built on the system you are using, you 
+should only have to set the ESMFMKFILE environment variable.
+This environment variable should be pointed to the esmf.mk file in the INSTALLED 
+version of the ESMF library.
+
+Some useful commands you can issue in this directory:
+
+gmake run   - run the application
+gmake dryrun - download the input grid files without running the demo
+gmake dust  - clean out .o and .mod files
+gmake clean - clean the directory and start over
+
+The input grid files will be downloaded from http:www.earthsystemmodeling.org/download/data and stored in the input directory.  If you would like to test
+with a different set of data files you must put them in the input directory.  The 
+new test case can then be added to the RegridTestData.txt file.
+
+If you would like to test only a single weight file you would be better off using
+the --check option to the ESMF_RegridWeightGenCheck application.
+
+================================================================================
+
+Please contact esmf_support@list.woc.noaa.gov with any questions or problems.
+
+================================================================================
