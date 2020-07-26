@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+#PBS -N runRWG
+#PBS -A P93300606
+#PBS -l walltime=00:30:00
+#PBS -q economy
+#PBS -l select=1:ncpus=36:mpiprocs=36
+#PBS -j oe
+#PBS -m n
+
+set -e
+
+n=$1
+EXECDIR=$2
+PLATFORM=$3
+grid1=$4
+grid2=$5
+method=$6
+options=$7
+weights=$8
+mb=$9
+
+# # debug
+# echo $n
+# echo $EXECDIR
+# echo $PLATFORM
+# echo $grid1
+# echo $grid2
+# echo $method
+# echo $options
+# echo $weights
+# echo $mb
+
+# load the run environment
+if [[ $PLATFORM == "Cheyenne" ]]; then
+    source /etc/profile.d/modules.sh
+    module purge
+    module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1
+fi
+
+cd $EXECDIR;
+if [[ $PLATFORM == "Cheyenne" ]]; then
+    # echo "mpiexec_mpt -n $n $EXECDIR/ESMF_RegridWeightGen -s $grid1 -d $grid2 -w $weights -m $method $options $mb > $EXECDIR/$weights.out"
+    mpiexec_mpt -n $n $EXECDIR/ESMF_RegridWeightGen -s $grid1 -d $grid2 -w $weights -m $method $options $mb > $EXECDIR/$weights.out
+elif [[ $PLATFORM == "Darwin" ]]; then
+    # echo "mpirun -n $n $EXECDIR/ESMF_RegridWeightGen -s $grid1 -d $grid2 -w $weights -m $method $options $mb > $EXECDIR/$weights.out"
+    mpirun -n $n $EXECDIR/ESMF_RegridWeightGen -s $grid1 -d $grid2 -w $weights -m $method $options $mb > $EXECDIR/$weights.out
+elif [[ $PLATFORM == "Linux" ]]; then
+    # echo "mpirun -n $n $EXECDIR/ESMF_RegridWeightGen -s $grid1 -d $grid2 -w $weights -m $method $options $mb > $EXECDIR/$weights.out"
+    mpirun -n $n $EXECDIR/ESMF_RegridWeightGen -s $grid1 -d $grid2 -w $weights -m $method $options $mb > $EXECDIR/$weights.out
+fi
+
