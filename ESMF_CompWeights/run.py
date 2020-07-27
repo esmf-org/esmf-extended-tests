@@ -2,13 +2,13 @@
 # coding: utf-8
 
 import os, re
-from subprocess import check_call, TimeoutExpired
+from subprocess
 from shutil import copy2
 from time import localtime, strftime
 from math import floor
 from threading import Thread
 import numpy as np
-
+import time
 debug_verbosity_high = True
 
 # from: https://stackoverflow.com/questions/2829329/catch-a-threads-exception-in-the-caller-thread-in-python
@@ -64,18 +64,35 @@ def generate_id(ROOTDIR):
 
 def call_script(*args, **kwargs):
     status = 0
-    try:
-        check_call(args[0]+[kwargs["weights"], kwargs["mb"]], timeout=kwargs["rwgtimeout"])
-    except TimeoutExpired as exc:
-        if debug_verbosity_high:
-            print (exc)
-            print ("MPI jobs cannot be reliably killed from Python, it is recommended to issue 'ps' to identify and kill all hanging MPI jobs")
+
+    # this method found at https://stackoverflow.com/questions/48763362/python-subprocess-kill-with-timeout requires ps_util
+    import psutil
+    parent=subprocess.Popen(args[0]+[kwargs["weights"], kwargs["mb"]])
+    for _ in range(kwargs["rwgtimeout"]): # xx seconds
+        if parent.poll() is not None:  # process just ended
+            status = 4.2
+            break
+        time.sleep(1)
     else:
-        # add Status columns to the dataframe
-        with open (kwargs["weights"]+".out", "r") as outfileobj:
-            for line in outfileobj:
-                if "Completed weight generation successfully." in line:
-                    status = 4.2
+        # the for loop ended without break: timeout
+        parent = psutil.Process(parent.pid)
+        for child in parent.children(recursive=True):  # or parent.children() for recursive=False
+            child.kill()
+        parent.kill()
+
+    # try:
+    #     subprocess.check_call(args[0]+[kwargs["weights"], kwargs["mb"]], timeout=kwargs["rwgtimeout"])
+    # except subprocess.TimeoutExpired as exc:
+    #     if debug_verbosity_high:
+    #         print (exc)
+    #         print ("MPI jobs cannot be reliably killed from Python, it is recommended to issue 'ps' to identify and kill all hanging MPI jobs")
+    # else:
+    #     # add Status columns to the dataframe
+    #     with open (kwargs["weights"]+".out", "r") as outfileobj:
+    #         for line in outfileobj:
+    #             if "Completed weight generation successfully." in line:
+    #                 status = 4.2
+
     return status
 
 def setup(df):
@@ -92,7 +109,7 @@ def setup(df):
 
         for grid, uri in grids.items():
             if not os.path.isfile(grid):
-                check_call(["wget", uri])
+                subprocess.check_call(["wget", uri])
 
     except:
         raise RuntimeError("Error downloading the data files.")
