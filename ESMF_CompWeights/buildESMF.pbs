@@ -10,43 +10,66 @@
 
 set -e
 
-ESMFDIR=$1
-BRANCH=$2
-PLATFORM=$3
-GNU10=$4
+ESMFDIR=${1}
+BRANCH=${2}
+PLATFORM=${3}
+GNU10=${4}
 
-export ESMF_DIR=$ESMFDIR; export ESMF_BOPT=O; export ESMF_OPTLEVEL=2; export ESMF_ABI=64; unset ESMF_TESTEXHAUSTIVE;
+ESMF_OS=${5}
+ESMF_COMPILER=${6}
+ESMF_COMM=${7}
+ESMF_NETCDF=${8}
+ESMF_NETCDF_INCLUDE=${9}
+ESMF_NETCDF_LIBPATH=${10}
+ESMF_BOPT=${11}
+ESMF_OPTLEVEL=${12}
+ESMF_ABI=${13}
+ESMF_BUILD_NP=${14}
 
-BUILD_NP=4
-if [[ $PLATFORM == "Cheyenne" ]]; then
-    source /etc/profile.d/modules.sh
-    module purge; module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1; 
-    export ESMF_COMPILER=intel; export ESMF_COMM=mpt; export ESMF_NETCDF=split; export ESMF_NETCDF_INCLUDE=/glade/u/apps/ch/opt/netcdf/4.7.1/intel/18.0.5/include; export ESMF_NETCDF_LIBPATH=/glade/u/apps/ch/opt/netcdf/4.7.1/intel/18.0.5/lib; ESMF_OS=Linux;
-    BUILD_NP=36
-elif [[ $PLATFORM == "Linux" ]]; then
-    export ESMF_COMPILER=gfortran; export ESMF_COMM=openmpi; export ESMF_NETCDF=split; export ESMF_NETCDF_INCLUDE=/usr/local/include; export ESMF_NETCDF_LIBPATH=/usr/local/lib; ESMF_OS=Linux;
-    BUILD_NP=6
-elif [[ $PLATFORM == "Darwin" ]]; then
-    export ESMF_COMPILER=gfortran; export ESMF_COMM=openmpi; export ESMF_NETCDF=split; export ESMF_NETCDF_INCLUDE=/usr/local/include; export ESMF_NETCDF_LIBPATH=/usr/local/lib; ESMF_OS=Darwin;
-else
-    echo 'USAGE: PLATFORM must be set to Cheyenne, Linux or Darwin.'
-    exit 1
-fi
+export ESMF_DIR=${ESMFDIR}
+export ESMF_COMPILER=${ESMF_COMPILER}
+export ESMF_COMM=${ESMF_COMM}
+export ESMF_NETCDF=${ESMF_NETCDF}
+export ESMF_NETCDF_INCLUDE=${ESMF_NETCDF_INCLUDE}
+export ESMF_NETCDF_LIBPATH=${ESMF_NETCDF_LIBPATH}
+export ESMF_BOPT=${ESMF_BOPT}
+export ESMF_OPTLEVEL=${ESMF_OPTLEVEL}
+export ESMF_ABI=${ESMF_ABI}
 
+# echo ${ESMF_DIR}
+# echo ${BRANCH}
+# echo ${PLATFORM}
+# echo ${GNU10}
+
+# echo ${ESMF_COMPILER}
+# echo ${ESMF_COMM}
+# echo ${ESMF_NETCDF}
+# echo ${ESMF_NETCDF_INCLUDE}
+# echo ${ESMF_NETCDF_LIBPATH}
+# echo ${ESMF_BOPT}
+# echo ${ESMF_OPTLEVEL}
+# echo ${ESMF_ABI}
+
+unset ESMF_TESTEXHAUSTIVE;
 unset ESMF_CXXCOMPILEOPTS; unset ESMF_F90COMPILEOPTS;
 
-if [[ $GNU10 == "True" ]]; then
+if [[ ${PLATFORM} == "Cheyenne" ]]; then
+    source /etc/profile.d/modules.sh
+    module purge; module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1;
+fi
+
+if [[ ${GNU10} == "True" ]]; then
     export ESMF_F90COMPILEOPTS+=" -fallow-argument-mismatch -fallow-invalid-boz"
-    echo "GNU10 has been specified, ESMF_F90COMPILEOPTS = $ESMF_F90COMPILEOPTS"
+    echo "GNU10 has been specified, ESMF_F90COMPILEOPTS = ${ESMF_F90COMPILEOPTS}"
 fi
 
 ### Build and install ESMF
-cd $ESMF_DIR
-make -j$BUILD_NP distclean &> /dev/null
-make -j$BUILD_NP &> $BRANCH-$ESMF_COMPILER-$ESMF_COMM-build.out
-make install &> $BRANCH-$ESMF_COMPILER-$ESMF_COMM-install.out
+cd ${ESMF_DIR}
+make -j${ESMF_BUILD_NP} distclean &> /dev/null
+make -j${ESMF_BUILD_NP} &> ${BRANCH}-${ESMF_COMPILER}-${ESMF_COMM}-build.out
+make install &> ${BRANCH}-${ESMF_COMPILER}-${ESMF_COMM}-install.out
 
 # write the ESMFMKFILE to $ESMF_DIR/esmfmkfile.out for later use
 # this is helpful to do here because all build flags are still available
-rm -f $ESMF_DIR/esmfmkfile.out
-echo "$ESMF_DIR/DEFAULTINSTALLDIR/lib/lib$ESMF_BOPT/$ESMF_OS.$ESMF_COMPILER.$ESMF_ABI.$ESMF_COMM.default/esmf.mk" > $ESMF_DIR/esmfmkfile.out
+rm -f ${ESMF_DIR}/esmfmkfile.out
+echo "${ESMF_DIR}/DEFAULTINSTALLDIR/lib/lib${ESMF_BOPT}/${ESMF_OS}.${ESMF_COMPILER}.${ESMF_ABI}.${ESMF_COMM}.default/esmf.mk" > ${ESMF_DIR}/esmfmkfile.out

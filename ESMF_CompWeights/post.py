@@ -24,7 +24,12 @@ def call_script(*args, **kwargs):
                     status = 4.2
     return status
 
-def do(SRCDIR, EXECDIR, platform, rwgtimeout):
+def do(EXECDIR, config, clickargs):
+    SRCDIR = config.SRCDIR
+
+    platform = clickargs["platform"]
+    rwgtimeout = clickargs["rwgtimeout"]
+
     # read the dataframe generated during previous execution
     df = pandas.read_csv(os.path.join(EXECDIR, "StatusDataFrame.csv"))
 
@@ -78,7 +83,12 @@ def do(SRCDIR, EXECDIR, platform, rwgtimeout):
 
     return df
 
-def process(SRCDIR, EXECDIR, platform, rwgtimeout):
+def process(EXECDIR, config, clickargs):
+    SRCDIR = config.SRCDIR
+
+    platform = clickargs["platform"]
+    rwgtimeout = clickargs["rwgtimeout"]
+
     try:
         print ("\nCompare weight files:", strftime("%a, %d %b %Y %H:%M:%S", localtime()))
 
@@ -89,7 +99,7 @@ def process(SRCDIR, EXECDIR, platform, rwgtimeout):
         copy2(os.path.join(SRCDIR, "DiffWeights"), EXECDIR) # created by init.test()
 
         # Run DiffWeights.F90 on all testcase pairs which have positive Status, return dataframe with Pass column added
-        dfPass = do(SRCDIR, EXECDIR, platform, rwgtimeout)
+        dfPass = do(EXECDIR, config, clickargs)
 
         print (dfPass)
 

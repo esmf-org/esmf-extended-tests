@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import os, re
-from subprocess
+import subprocess
 from shutil import copy2
 from time import localtime, strftime
 from math import floor
@@ -114,7 +114,14 @@ def setup(df):
     except:
         raise RuntimeError("Error downloading the data files.")
 
-def do(df, SRCDIR, DATADIR, EXECDIR, n, platform, rwgtimeout):
+def do(df, EXECDIR, DATADIR, config, clickargs):
+
+    SRCDIR = config.SRCDIR
+
+    n = clickargs["n"]
+    platform = clickargs["platform"]
+    rwgtimeout = clickargs["rwgtimeout"]
+
     # create numpy array of length of data frame by two for status values
     status = np.zeros([len(df), 2])
 
@@ -167,9 +174,15 @@ def do(df, SRCDIR, DATADIR, EXECDIR, n, platform, rwgtimeout):
 
     return df
 
-def test(df, SRCDIR, RUNDIR, ESMFBINDIR, n, platform, rwgtimeout):
+def test(df, ESMFBINDIR, config, clickargs):
     try:
         print ("\nSubmit the jobs for weight file generation:", strftime("%a, %d %b %Y %H:%M:%S", localtime()))
+
+        RUNDIR = config.RUNDIR
+
+        n = clickargs["n"]
+        platform = clickargs["platform"]
+        rwgtimeout = clickargs["rwgtimeout"]
 
         # first download all grid files
         DATADIR = os.path.join(RUNDIR, "data")
@@ -191,7 +204,7 @@ def test(df, SRCDIR, RUNDIR, ESMFBINDIR, n, platform, rwgtimeout):
         copy2(os.path.join(ESMFBINDIR, "ESMF_RegridWeightGen"), EXECDIR) # created by init.esmf()
 
         # Run RegridWeightGen.F90 on all testcases for Native and MBMesh, return dataframe with Status columns added
-        do(df, SRCDIR, DATADIR, EXECDIR, n, platform, rwgtimeout)
+        do(df, EXECDIR, DATADIR, config, clickargs)
 
         print ("\nAll jobs completed successfully.", strftime("%a, %d %b %Y %H:%M:%S", localtime()))
     

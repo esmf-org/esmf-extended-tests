@@ -20,9 +20,9 @@ import pandas
 @click.option('--esmfmkfile', type=str, default="", help='Path to esmf.mk, will build ESMF if not supplied')
 @click.option('--platform', type=str, default="Linux", help='Platform configuration [Cheyenne, Darwin, Linux]')
 @click.option('--gnu10', is_flag=True, default=False, help='Fix for gnu10 ESMF compiler options')
-@click.option('--rwg_timeout', type=int, default=60, help='Timeout in seconds for RegridWeightGen.F90')
+@click.option('--rwgtimeout', type=int, default=60, help='Timeout in seconds for RegridWeightGen.F90')
 @click.option('--debug_execdir', type=str, default="", help='Execution directory to use for debugging purposes')
-def cli(n, testcase, branch, esmfmkfile, platform, gnu10, rwg_timeout, debug_execdir):
+def cli(n, testcase, branch, esmfmkfile, platform, gnu10, rwgtimeout, debug_execdir):
     # Raw print arguments
     print("\nRunning 'compweights.py' with following input parameter values: ")
     print("--n = ", n)
@@ -31,7 +31,7 @@ def cli(n, testcase, branch, esmfmkfile, platform, gnu10, rwg_timeout, debug_exe
     print("--esmfmkfile = ", esmfmkfile)
     print("--platform = ", platform)
     print("--gnu10 = ", gnu10)
-    print("--rwg_timeout = ", rwg_timeout)
+    print("--rwgtimeout = ", rwgtimeout)
     print("--debug_execdir = ", debug_execdir)
     EXECDIR = debug_execdir
 
@@ -40,36 +40,38 @@ def cli(n, testcase, branch, esmfmkfile, platform, gnu10, rwg_timeout, debug_exe
 
     # import platform specific specific parameters
     config = __import__(platform)
-    RUNDIR = config.RUNDIR
-    SRCDIR = config.SRCDIR
-    RegridTestData = config.RegridTestData
 
-    df = pandas.read_csv(os.path.join(SRCDIR, "config", RegridTestData), sep=":", skipinitialspace=True, comment="#")
+    clickargs = {"n" : n,
+                 "testcase": testcase,
+                 "branch": branch,
+                 "esmfmkfile": esmfmkfile,
+                 "platform": platform,
+                 "gnu10": gnu10,
+                 "rwgtimeout": rwgtimeout}
 
-    print("RUNDIR = ", RUNDIR)
-    print("SRCDIR = ", SRCDIR)
+    df = pandas.read_csv(os.path.join(config.SRCDIR, "config", config.RegridTestData), sep=":", skipinitialspace=True, comment="#")
 
     # if we are not in debug mode
     if EXECDIR == "":
         # 1 initialize: build and install esmf and tests with appropriate env vars
         try:
             import init
-            ESMFMKFILE = init.esmf(RUNDIR, SRCDIR, platform, branch, esmfmkfile, gnu10)
-            ESMFBINDIR = init.test(ESMFMKFILE, RUNDIR, SRCDIR, platform)
+            ESMFMKFILE, ESMFBINDIR = init.esmf(config, clickargs)
+            init.test(ESMFMKFILE, config, clickargs)
         except:
             raise RuntimeError("Error building the tests.")
         
         # 2 run: submit the test runs
         try:
             import run
-            EXECDIR = run.test(df, SRCDIR, RUNDIR, ESMFBINDIR, n, platform, rwg_timeout)
+            EXECDIR = run.test(df, ESMFBINDIR, config, clickargs)
         except:
             raise RuntimeError("Error submitting the tests.")
 
     # 3 post: collect the results into csv files
     try:
         import post
-        post.process(SRCDIR, EXECDIR, platform, rwg_timeout)
+        post.process(EXECDIR, config, clickargs)
     except:
         raise RuntimeError("Error processing the test results.")
 
