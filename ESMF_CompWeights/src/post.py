@@ -52,14 +52,20 @@ def do(EXECDIR, config, clickargs):
             weights_mb_base = srcgrid.rsplit(".nc",1)[0]+"_to_"+dstgrid.rsplit(".nc",1)[0]+"_"+method+"_mb"
             weights_mb=weights_mb_base+".nc"
 
-            run_command = [os.path.join(SRCDIR, "runDiffWeights.pbs"), EXECDIR, platform, weights, weights_mb]
-            
+            # set up the call to the pbs script
+            pbs_dw = os.path.join(SRCDIR, "runDiffWeights.pbs")
+            pbs_args = [EXECDIR, platform, weights, weights_mb]
+
+            run_command = ""
             if platform == "Cheyenne":
-                run_command = ["qsub", "-W block=true"] + run_command
+                run_command = ["qsub", "-N", "runDiffWeights", "-A", "P93300606", "-l",  
+                               "walltime=00:30:00", "-q", "economy", "-l",
+                               "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
+                               "-W", "block=true", "--", pbs_dw] + pbs_args
                 job_threads.append(PropagatingThread(target=call_script, args=run_command, weights=weights))
             # call all jobs without submitting to queue (serial) to avoid memory issues
             else:
-                run_command = ["bash"] + run_command
+                run_command = ["bash", pbs_dw] + pbs_args
                 status[index] = call_script(run_command, weights=weights)
                 print (".", end=" ", flush=True)
 

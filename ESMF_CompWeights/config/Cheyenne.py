@@ -1,7 +1,8 @@
 import os
 
 RUNDIR="/glade/work/rokuingh/MBMeshCompWeightsResults"
-SRCDIR="/glade/work/rokuingh/sandbox/extended-tests/ESMF_CompWeights"
+SRCDIR="/glade/work/rokuingh/sandbox/extended-tests/ESMF_CompWeights/src"
+CFGDIR="/glade/work/rokuingh/sandbox/extended-tests/ESMF_CompWeights/config"
 RegridTestData="RegridTestData.py"
 
 esmf_env = dict(ESMF_OS = "Linux",

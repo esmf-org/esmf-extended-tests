@@ -84,13 +84,18 @@ def esmf(config, clickargs):
             check_call(["git", "checkout", branch])
 
             # set up the call to the pbs script
-            pbscript = [os.path.join(BUILDDIR, "buildESMF.pbs"), ESMFDIR, branch, platform, str(gnu10), ESMF_OS, ESMF_COMPILER, ESMF_COMM, ESMF_NETCDF, ESMF_NETCDF_INCLUDE, ESMF_NETCDF_LIBPATH, ESMF_BOPT, str(ESMF_OPTLEVEL), str(ESMF_ABI), str(ESMF_BUILD_NP)]
+            pbs_esmf = os.path.join(BUILDDIR, "buildESMF.pbs")
+            pbs_args = [ESMFDIR, branch, platform, str(gnu10), ESMF_OS, ESMF_COMPILER, ESMF_COMM, ESMF_NETCDF, ESMF_NETCDF_INCLUDE, ESMF_NETCDF_LIBPATH, ESMF_BOPT, str(ESMF_OPTLEVEL), str(ESMF_ABI), str(ESMF_BUILD_NP)]
 
             # set up the pbs script for submission to qsub on cheyenne or bash otherwise
+            run_command = ""
             if platform == "Cheyenne":
-                run_command = ["qsub", "-W block=true"] + pbscript
+                run_command = ["qsub", "-N", "esmfbuild", "-A", "P93300606", "-l",  
+                               "walltime=01:00:00", "-q", "economy", "-l",
+                               "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
+                               "-W", "block=true", "--", pbs_esmf] + pbs_args
             else:  
-                run_command = ["bash"] + pbscript
+                run_command = ["bash", pbs_esmf] + pbs_args
 
             check_call(run_command)
 

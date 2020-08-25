@@ -1,7 +1,8 @@
 import os
 
 RUNDIR="/Users/oehmke/MBMeshCompWeightsResults"
-SRCDIR="/Users/oehmke/sandbox/extended-tests/ESMF_CompWeights"
+SRCDIR="/Users/oehmke/sandbox/extended-tests/ESMF_CompWeights/src"
+CFGDIR="/Users/oehmke/sandbox/extended-tests/ESMF_CompWeights/config"
 RegridTestData="RegridTestData.py"
 
 esmf_env = dict(ESMF_OS = "Darwin",

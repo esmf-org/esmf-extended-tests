@@ -136,15 +136,22 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
         weights=srcgrid.rsplit(".nc",1)[0]+"_to_"+dstgrid.rsplit(".nc",1)[0]+"_"+method+".nc"
         weights_mb=srcgrid.rsplit(".nc",1)[0]+"_to_"+dstgrid.rsplit(".nc",1)[0]+"_"+method+"_mb"+".nc"
 
-        run_command = [os.path.join(SRCDIR, "runRWG.pbs"), str(n), EXECDIR, platform, os.path.join(DATADIR, srcgrid), os.path.join(DATADIR, dstgrid), method, options]
-        
+        # set up the call to the pbs script
+        pbs_rwg = os.path.join(SRCDIR, "runRWG.pbs")
+        pbs_args = [str(n), EXECDIR, platform, os.path.join(DATADIR, srcgrid), os.path.join(DATADIR, dstgrid), method, options]
+
+        run_command = ""
         if platform == "Cheyenne":
-            run_command = ["qsub", "-W block=true"] + run_command
+            run_command = ["qsub", "-N", "runRWG", "-A", "P93300606", "-l",  
+                           "walltime=00:30:00", "-q", "economy", "-l",
+                           "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
+                           "-W", "block=true", "--", pbs_rwg] + pbs_args
+
             job_threads.append(PropagatingThread(target=call_script, args=run_command, rwgtimeout=rwgtimeout, weights=weights, mb=""))
             job_threads.append(PropagatingThread(target=call_script, args=run_command, rwgtimeout=rwgtimeout, weights=weights_mb, mb="--moab"))
         # call all jobs without submitting to queue (serial) to avoid memory issues
         else:
-            run_command = ["bash"] + run_command
+            run_command = ["bash", pbs_rwg] + pbs_args
             status[index, 0] = call_script(run_command, rwgtimeout=rwgtimeout, weights=weights, mb="")
             print (".", end=" ", flush=True)
             status[index, 1] = call_script(run_command, rwgtimeout=rwgtimeout, weights=weights_mb, mb="--moab")
