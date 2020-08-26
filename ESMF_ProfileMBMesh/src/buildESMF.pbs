@@ -1,0 +1,103 @@
+#!/bin/bash
+#
+#PBS -N esmfbuild
+#PBS -A P93300606
+#PBS -l walltime=01:00:00
+#PBS -q economy
+#PBS -l select=1:ncpus=36:mpiprocs=36
+#PBS -j oe
+#PBS -m n
+
+set -e
+
+ESMFDIR=${1}
+BRANCH=${2}
+PLATFORM=${3}
+TESTCASE=${4}
+GNU10=${5}
+
+ESMF_OS=${6}
+ESMF_COMPILER=${7}
+ESMF_COMM=${8}
+ESMF_NETCDF=${9}
+ESMF_NETCDF_INCLUDE=${10}
+ESMF_NETCDF_LIBPATH=${11}
+ESMF_BOPT=${12}
+ESMF_OPTLEVEL=${13}
+ESMF_ABI=${14}
+ESMF_BUILD_NP=${15}
+
+export ESMF_DIR=${ESMFDIR}
+export ESMF_COMPILER=${ESMF_COMPILER}
+export ESMF_COMM=${ESMF_COMM}
+export ESMF_NETCDF=${ESMF_NETCDF}
+export ESMF_NETCDF_INCLUDE=${ESMF_NETCDF_INCLUDE}
+export ESMF_NETCDF_LIBPATH=${ESMF_NETCDF_LIBPATH}
+export ESMF_BOPT=${ESMF_BOPT}
+export ESMF_OPTLEVEL=${ESMF_OPTLEVEL}
+export ESMF_ABI=${ESMF_ABI}
+
+# echo ${ESMF_DIR}
+# echo ${BRANCH}
+# echo ${PLATFORM}
+# echo ${TESTCASE}
+# echo ${GNU10}
+
+# echo ${ESMF_COMPILER}
+# echo ${ESMF_COMM}
+# echo ${ESMF_NETCDF}
+# echo ${ESMF_NETCDF_INCLUDE}
+# echo ${ESMF_NETCDF_LIBPATH}
+# echo ${ESMF_BOPT}
+# echo ${ESMF_OPTLEVEL}
+# echo ${ESMF_ABI}
+
+unset ESMF_TESTEXHAUSTIVE;
+unset ESMF_CXXCOMPILEOPTS; unset ESMF_F90COMPILEOPTS;
+
+if [[ ${PLATFORM} == "Cheyenne" ]]; then
+    source /etc/profile.d/modules.sh
+    module purge; module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1;
+fi
+
+if [[ ${TESTCASE} == "create" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_MESHCREATE
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_MESHCREATE
+elif [[ ${TESTCASE} == "dual" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_DUALMESH
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_DUALMESH
+elif [[ ${TESTCASE} == "grid2mesh" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_GRID2MESH
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_GRID2MESH
+elif [[ ${TESTCASE} == "redist" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_MESHREDIST
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_MESHREDIST
+elif [[ ${TESTCASE} == "regrid-bilinear" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_REGRID
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_REGRID
+elif [[ ${TESTCASE} == "regrid-conservative" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_REGRID
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_REGRID
+elif [[ ${TESTCASE} == "rendezvous" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_RENDEZVOUS
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_RENDEZVOUS
+else
+  echo 'USAGE: TESTCASE must be set to create, dual, grid2mesh, redist, regrid-bilinear, regrid-conservative, or rendezvous'
+  exit 1
+fi
+
+if [[ ${GNU10} == "True" ]]; then
+    export ESMF_F90COMPILEOPTS+=" -fallow-argument-mismatch -fallow-invalid-boz"
+    echo "GNU10 has been specified, ESMF_F90COMPILEOPTS = ${ESMF_F90COMPILEOPTS}"
+fi
+
+### Build and install ESMF
+cd ${ESMF_DIR}
+make -j${ESMF_BUILD_NP} distclean &> /dev/null
+make -j${ESMF_BUILD_NP} &> ${BRANCH}-${ESMF_COMPILER}-${ESMF_COMM}-build.out
+make install &> ${BRANCH}-${ESMF_COMPILER}-${ESMF_COMM}-install.out
+
+# write the ESMFMKFILE to $ESMF_DIR/esmfmkfile.out for later use
+# this is helpful to do here because all build flags are still available
+rm -f ${ESMF_DIR}/esmfmkfile.out
+echo "${ESMF_DIR}/DEFAULTINSTALLDIR/lib/lib${ESMF_BOPT}/${ESMF_OS}.${ESMF_COMPILER}.${ESMF_ABI}.${ESMF_COMM}.default/esmf.mk" > ${ESMF_DIR}/esmfmkfile.out
