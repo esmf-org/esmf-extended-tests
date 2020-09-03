@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# submit native vs MBMesh profiling jobs from 36 - 4608 cores
+#
+
+np=$1
+nrun=$2  
+
+procs=(36 72 144 288 576 1152 2304 4608)
+
+export ESMFMKFILE=/glade/work/rokuingh/ESMF/MBMESHPROFILEALL/lib/libO/Linux.intel.64.mpt.default/esmf.mk
+# export ESMFMKFILE=/glade/work/rokuingh/sandbox/esmf/lib/libO/Linux.intel.64.mpt.default/esmf.mk
+
+SRCDIR="/glade/work/rokuingh/sandbox/profiling/Moab"
+ROOTDIR="/glade/work/rokuingh/MBMeshPerformanceResults"
+# uncomment the following lines to test in non-Cheyenne environment
+# SRCDIR="/home/ryan/sandbox/profiling/Moab"
+# ROOTDIR="/home/ryan/MBMeshPerformanceResults"
+
+DATADIR=$SRCDIR/data
+GRID1=$DATADIR/ll1280x1280_grid.esmf.nc
+GRID2=$DATADIR/ll1280x1280_grid.esmf.nc
+
+
+# load the run environment
+source /etc/profile.d/modules.sh
+module purge
+module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1
+
+# set up the ESMF environment
+export ESMF_RUNTIME_PROFILE=ON
+export ESMF_RUNTIME_PROFILE_OUTPUT=SUMMARY
+
+# build the executable locally
+cd $SRCDIR
+make distclean
+make > make.out 2>&1
+
+# create execution directory and copy executable to it
+cd $SRCDIR
+EXECDIR=$(python $SRCDIR/run_generate_id.py $ROOTDIR 2>&1)
+if [[ $EXECDIR != "$ROOTDIR"* ]]; then
+  echo "EXECDIR was not set properly."
+  echo ""
+  echo $EXECDIR
+  exit 1
+fi
+
+mkdir $EXECDIR
+cd $EXECDIR
+
+for pnum in "${procs[@]}"
+do
+  # run all cases in procs that are not larger than input
+  if [ $pnum -le $np ]
+  then
+    # calculate the number of nodes required for this batch submission
+    nnum=$(( ($pnum+36-1)/36 ))
+
+    sed "s&%np%&$pnum&g; s&%nn%&$nnum&g; s&%nrun%&$nrun&g; s&%EXECDIR%&$EXECDIR&g; s&%grid1%&$GRID1&g; s&%grid2%&$GRID2&g" $SRCDIR/MOAB_eval_run_pbs > $SRCDIR/MOAB_eval_run_pbs_$pnum
+
+    for ((ind=1; ind<$nrun+1; ++ind))
+    do
+      # create a separate directory to run each executable nrun times to give meaningful timings
+      mkdir $pnum-$ind
+
+      # copy config files and executable to execution directory
+      ppnum=$(printf '%06d' "$pnum")
+      cp $SRCDIR/MOAB_eval $pnum-$ind
+    done
+
+    qsub $SRCDIR/MOAB_eval_run_pbs_$pnum
+    echo "qsub $SRCDIR/MOAB_eval_run_pbs_$pnum"
+    # bash $SRCDIR/MOAB_eval_run_pbs_$pnum
+  fi
+done

@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+#PBS -N mesh_serial_mem
+#PBS -A P93300606
+#PBS -l walltime=00:05:00
+#PBS -q economy
+#PBS -l select=1:ncpus=1:mpiprocs=1
+#PBS -j oe
+#PBS -m ae
+#PBS -o mesh_serial_mem.out
+#PBS -e mesh_serial_mem.err
+
+mpiexec.hydra ./mesh_serial_mem

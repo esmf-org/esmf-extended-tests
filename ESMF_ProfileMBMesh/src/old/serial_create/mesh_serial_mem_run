@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+#BSUB -a poe
+#BSUB -J mesh_serial_mem
+#BSUB -P P35071400
+#BSUB -W 00:5
+#BSUB -q regular
+#BSUB -n 1
+#BSUB -R "span[ptile=16]"
+#BSUB -o mesh_serial_mem.out
+#BSUB -e mesh_serial_mem.err
+#BSUB -N
+
+mpirun.lsf ./mesh_serial_mem
