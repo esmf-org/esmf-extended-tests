@@ -40,13 +40,13 @@ fi
 
 cd ${EXECDIR};
 if [[ ${PLATFORM} == "Cheyenne" ]]; then
-    # echo "mpiexec_mpt -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights} -m ${method} ${options} ${mb} > ${EXECDIR}/${weights}.out"
-    mpiexec_mpt -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights} -m ${method} ${options} ${mb} > ${EXECDIR}/${weights}.out
+    # echo "mpiexec_mpt -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out"
+    mpiexec_mpt -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out
 elif [[ ${PLATFORM} == "Darwin" ]]; then
-    # echo "mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights} -m ${method} ${options} ${mb} > ${EXECDIR}/${weights}.out"
-    mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights} -m ${method} ${options} ${mb} > ${EXECDIR}/${weights}.out
+    # echo "mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out"
+    mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out
 elif [[ ${PLATFORM} == "Linux" ]]; then
-    # echo "mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights} -m ${method} ${options} ${mb} > ${EXECDIR}/${weights}.out"
-    mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights} -m ${method} ${options} ${mb} > ${EXECDIR}/${weights}.out
+    # echo "mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out"
+    mpirun -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out
 fi
 

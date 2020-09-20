@@ -4,16 +4,16 @@
 
 SourceGrid:DestinationGrid:RegridMethod:Options:RelativeError:AreaError:ConservationError
 
-ne30np4_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc center : 10E-05 : 10E-04 : 10E-16
+# ne30np4_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc center : 10E-05 : 10E-04 : 10E-16
 
 
-# # global grids with pole options
-# ll2.5deg_grid.nc : T42_grid.nc      : bilinear : -p none    : 10E-04 : 10E-03 : 10E-16
-# T42_grid.nc      : ll2.5deg_grid.nc : bilinear : -p 4       : 10E-04 : 10E-03 : 10E-16
-# 
-# # global to global with file type arguments
-# ll1deg_grid.nc : ll2.5deg_grid.nc : bilinear : -t SCRIP         : 10E-05 : 10E-04 : 10E-16
-# ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --dst_type SCRIP : 10E-04 : 10E-04 : 10E-13
+# global grids with pole options
+ll2.5deg_grid.nc : T42_grid.nc      : bilinear : -p none    : 10E-04 : 10E-03 : 10E-16
+T42_grid.nc      : ll2.5deg_grid.nc : bilinear : -p 4       : 10E-04 : 10E-03 : 10E-16
+
+# global to global with file type arguments
+ll1deg_grid.nc : ll2.5deg_grid.nc : bilinear : -t SCRIP         : 10E-05 : 10E-04 : 10E-16
+ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --dst_type SCRIP : 10E-04 : 10E-04 : 10E-13
 # 
 # # destination regional
 # T42_grid.nc : wr50a_090614.nc : bilinear : --dst_regional : 10E-04 : 10E-04 : 10E-16

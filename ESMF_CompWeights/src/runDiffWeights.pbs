@@ -34,13 +34,13 @@ fi
 
 cd ${EXECDIR};
 if [[ ${PLATFORM} == "Cheyenne" ]]; then
-    # echo "mpiexec_mpt -n ${n} ${EXECDIR}/DiffWeights -w1 ${weights} -w2 ${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"
-    mpiexec_mpt -n ${n} ${EXECDIR}/DiffWeights -w1 ${weights} -w2 ${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out
+    # echo "mpiexec_mpt -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"
+    mpiexec_mpt -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out
 elif [[ ${PLATFORM} == "Darwin" ]]; then
-    # echo "mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${weights} -w2 ${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"
-    mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${weights} -w2 ${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out
+    # echo "mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"
+    mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out
 elif [[ ${PLATFORM} == "Linux" ]]; then
-    # echo "mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${weights} -w2 ${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"
-    mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${weights} -w2 ${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out
+    # echo "mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"
+    mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out
 fi
 

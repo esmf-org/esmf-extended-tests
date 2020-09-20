@@ -6,31 +6,11 @@ import subprocess
 from shutil import copy2
 from time import localtime, strftime
 from math import floor
-from threading import Thread
 import numpy as np
 import time
+from src.propagatingthread import PropagatingThread
+
 debug_verbosity_high = True
-
-# from: https://stackoverflow.com/questions/2829329/catch-a-threads-exception-in-the-caller-thread-in-python
-class PropagatingThread(Thread):
-    def run(self):
-        self.exc = None
-        try:
-            if hasattr(self, '_Thread__target'):
-                # Thread uses name mangling prior to Python 3.
-                self.ret = self._Thread__target(*self._Thread__args, **self._Thread__kwargs)
-            else:
-                self.ret = self._target(*self._args, **self._kwargs)
-        except BaseException as e:
-            self.exc = e
-
-        return self.ret
-
-    def join(self):
-        super(PropagatingThread, self).join()
-        if self.exc:
-            raise self.exc
-        return self.ret
 
 def generate_id(ROOTDIR):
     import os, re
@@ -67,7 +47,22 @@ def call_script(*args, **kwargs):
 
     # this method found at https://stackoverflow.com/questions/48763362/python-subprocess-kill-with-timeout requires ps_util
     import psutil
-    parent=subprocess.Popen(args[0]+[kwargs["weights"], kwargs["mb"]])
+    # print (args)
+    # print (type(args))
+
+    args_local = args[0]
+    if type(args[0]) is str:
+        args_local = args[0].split(",")
+
+    # print (args_local)
+    # print (type(args_local))
+
+    run_command = list(args_local)+[kwargs["weights"], kwargs["mb"]]
+
+    # print (run_command)
+    # print (kwargs["rwgtimeout"])
+
+    parent=subprocess.Popen(run_command)
     for _ in range(kwargs["rwgtimeout"]): # xx seconds
         if parent.poll() is not None:  # process just ended
             status = 4.2
@@ -79,6 +74,8 @@ def call_script(*args, **kwargs):
         for child in parent.children(recursive=True):  # or parent.children() for recursive=False
             child.kill()
         parent.kill()
+
+    # print ("STATUS = "+str(status))
 
     # try:
     #     subprocess.check_call(args[0]+[kwargs["weights"], kwargs["mb"]], timeout=kwargs["rwgtimeout"])
@@ -133,8 +130,8 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
         method = testcase["RegridMethod"].strip()
         options = testcase["Options"]
 
-        weights=srcgrid.rsplit(".nc",1)[0]+"_to_"+dstgrid.rsplit(".nc",1)[0]+"_"+method+".nc"
-        weights_mb=srcgrid.rsplit(".nc",1)[0]+"_to_"+dstgrid.rsplit(".nc",1)[0]+"_"+method+"_mb"+".nc"
+        weights=os.path.join(EXECDIR,srcgrid.rsplit(".nc",1)[0]+"_to_"+dstgrid.rsplit(".nc",1)[0]+"_"+method)
+        weights_mb=os.path.join(EXECDIR,srcgrid.rsplit(".nc",1)[0]+"_to_"+dstgrid.rsplit(".nc",1)[0]+"_"+method+"_mb")
 
         # set up the call to the pbs script
         pbs_rwg = os.path.join(SRCDIR, "runRWG.pbs")
@@ -147,24 +144,40 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
                            "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
                            "-W", "block=true", "--", pbs_rwg] + pbs_args
 
-            job_threads.append(PropagatingThread(target=call_script, args=run_command, rwgtimeout=rwgtimeout, weights=weights, mb=""))
-            job_threads.append(PropagatingThread(target=call_script, args=run_command, rwgtimeout=rwgtimeout, weights=weights_mb, mb="--moab"))
+            # csv string to preserve spaces from input (options)
+            run_command2 = ','.join(run_command)
+
+            # pass as a tuple to avoid PropagatingThread expanding incorrectly to list (spaces in options)
+            job1 = PropagatingThread(target=call_script, args=(run_command,), kwargs={'rwgtimeout' : rwgtimeout, 'weights' : weights, 'mb' : ""})
+            job2 = PropagatingThread(target=call_script, args=(run_command,), kwargs={'rwgtimeout' : rwgtimeout, 'weights' : weights_mb, 'mb' : '--moab'})
+
+            # set up as a tuple of two jobs to conform to the structure of two runs per row of the data frame
+            job_threads.append((job1, job2))
+
         # call all jobs without submitting to queue (serial) to avoid memory issues
         else:
+            # pass as a tuple string
             run_command = ["bash", pbs_rwg] + pbs_args
-            status[index, 0] = call_script(run_command, rwgtimeout=rwgtimeout, weights=weights, mb="")
+            run_command2 = (','.join(run_command))
+
+            status[index, 0] = call_script(run_command2, rwgtimeout=rwgtimeout, weights=weights, mb="")
             print (".", end=" ", flush=True)
-            status[index, 1] = call_script(run_command, rwgtimeout=rwgtimeout, weights=weights_mb, mb="--moab")
+
+            status[index, 1] = call_script(run_command2, rwgtimeout=rwgtimeout, weights=weights_mb, mb="--moab")
             print (".", end=" ", flush=True)
+
 
     # call jobs in queue (parallel)
     if platform == "Cheyenne":
-        for index, job in enumerate(job_threads):
-            status[index, :] = job.start()
-    
-        for job in job_threads:
-            job.join()
+        for jobtuple in job_threads:
+            jobtuple[0].start()
             print (".", end=" ", flush=True)
+            jobtuple[1].start()
+            print (".", end=" ", flush=True)
+    
+        for index, jobtuple in enumerate(job_threads):
+            status[index, 0] = jobtuple[0].join()
+            status[index, 1] = jobtuple[1].join()
 
     status_str = np.empty(status.shape, dtype=str)
     for index, val in np.ndenumerate(status):

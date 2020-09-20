@@ -6,9 +6,9 @@ from subprocess import check_call, TimeoutExpired
 from shutil import copy2
 from time import localtime, strftime
 from math import floor
-from threading import Thread
 import numpy as np
 import pandas
+from src.propagatingthread import PropagatingThread
 
 def call_script(*args, **kwargs):
     status = 0
@@ -62,21 +62,13 @@ def do(EXECDIR, config, clickargs):
                                "walltime=00:30:00", "-q", "economy", "-l",
                                "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
                                "-W", "block=true", "--", pbs_dw] + pbs_args
-                job_threads.append(PropagatingThread(target=call_script, args=run_command, weights=weights))
+                status[index] = call_script(run_command, weights=weights)
+
             # call all jobs without submitting to queue (serial) to avoid memory issues
             else:
                 run_command = ["bash", pbs_dw] + pbs_args
                 status[index] = call_script(run_command, weights=weights)
                 print (".", end=" ", flush=True)
-
-    # call jobs in queue (parallel)
-    if platform == "Cheyenne":
-        for index, job in enumerate(job_threads):
-            status[index] = job.start()
-    
-        for job in job_threads:
-            job.join()
-            print (".", end=" ", flush=True)
 
     status_str = []
     for i in range(status.shape[0]):
@@ -107,6 +99,7 @@ def process(EXECDIR, config, clickargs):
         # Run DiffWeights.F90 on all testcase pairs which have positive Status, return dataframe with Pass column added
         dfPass = do(EXECDIR, config, clickargs)
 
+        print ('')
         print (dfPass)
 
         print ("\nWeight file comparison completed successfully.", strftime("%a, %d %b %Y %H:%M:%S", localtime()))
