@@ -205,7 +205,7 @@ def test(df, ESMFBINDIR, config, clickargs):
         # Run RegridWeightGen.F90 on all testcases for Native and MBMesh, return dataframe with Status columns added
         do(df, EXECDIR, DATADIR, config, clickargs)
 
-        print ("\nAll jobs completed successfully.", strftime("%a, %d %b %Y %H:%M:%S", localtime()))
+        print ("\nAll jobs completed.", strftime("%a, %d %b %Y %H:%M:%S", localtime()))
     
     except:
         raise RuntimeError("Error submitting the jobs.")
