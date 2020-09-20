@@ -28,7 +28,7 @@ n=1
 # echo ${weights_mb}
 
 # load the run environment
-${MODULES}
+eval ${MODULES}
 
 cd ${EXECDIR};
 # echo "mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"

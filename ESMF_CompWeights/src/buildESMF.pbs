@@ -54,7 +54,7 @@ unset ESMF_TESTEXHAUSTIVE;
 unset ESMF_CXXCOMPILEOPTS; unset ESMF_F90COMPILEOPTS;
 
 # load the run environment
-${MODULES}
+eval ${MODULES}
 
 if [[ ${GNU10} == "True" ]]; then
     export ESMF_F90COMPILEOPTS+=" -fallow-argument-mismatch -fallow-invalid-boz"

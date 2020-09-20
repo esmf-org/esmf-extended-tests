@@ -34,7 +34,7 @@ mb=${10}
 # echo ${mb}
 
 # load the run environment
-${MODULES}
+eval ${MODULES}
 
 cd ${EXECDIR};
 # echo "${MPIRUN} -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out"

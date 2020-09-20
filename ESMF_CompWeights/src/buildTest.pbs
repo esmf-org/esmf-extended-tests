@@ -10,7 +10,7 @@ SRCDIR=${3}
 MODULES=${4}
 
 # load the run environment
-${MODULES}
+eval ${MODULES}
 
 # build the executable locally
 ESMFMKFILE=${ESMFMKFILE} make clean &> /dev/null
