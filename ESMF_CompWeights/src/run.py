@@ -114,6 +114,8 @@ def setup(df):
 def do(df, EXECDIR, DATADIR, config, clickargs):
 
     SRCDIR = config.SRCDIR
+    MODULES = config.modules
+    MPIRUN = config.mpirun
 
     n = clickargs["n"]
     platform = clickargs["platform"]
@@ -135,7 +137,7 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
 
         # set up the call to the pbs script
         pbs_rwg = os.path.join(SRCDIR, "runRWG.pbs")
-        pbs_args = [str(n), EXECDIR, platform, os.path.join(DATADIR, srcgrid), os.path.join(DATADIR, dstgrid), method, options]
+        pbs_args = [str(n), EXECDIR, MODULES, MPIRUN, os.path.join(DATADIR, srcgrid), os.path.join(DATADIR, dstgrid), method, options]
 
         run_command = ""
         if platform == "Cheyenne":

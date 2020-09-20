@@ -51,8 +51,6 @@ def cli(n, branch, esmfmkfile, platform, gnu10, rwgtimeout, debug_execdir):
 
     df = pandas.read_csv(os.path.join(config.CFGDIR, config.RegridTestData), sep=":", skipinitialspace=True, comment="#")
 
-    
-
     # if we are not in debug mode
     if EXECDIR == "":
         # 1 initialize: build and install esmf and tests with appropriate env vars

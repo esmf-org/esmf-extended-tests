@@ -26,6 +26,8 @@ def call_script(*args, **kwargs):
 
 def do(EXECDIR, config, clickargs):
     SRCDIR = config.SRCDIR
+    MODULES = config.modules
+    MPIRUN = config.mpirun
 
     platform = clickargs["platform"]
     rwgtimeout = clickargs["rwgtimeout"]
@@ -54,7 +56,7 @@ def do(EXECDIR, config, clickargs):
 
             # set up the call to the pbs script
             pbs_dw = os.path.join(SRCDIR, "runDiffWeights.pbs")
-            pbs_args = [EXECDIR, platform, weights, weights_mb]
+            pbs_args = [EXECDIR, MODULES, MPIRUN, weights, weights_mb]
 
             run_command = ""
             if platform == "Cheyenne":

@@ -15,3 +15,6 @@ esmf_env = dict(ESMF_OS = "Linux",
                 ESMF_OPTLEVEL=2,
                 ESMF_ABI=64,
                 ESMF_BUILD_NP=36)
+
+mpirun = "mpiexec_mpt"
+modules = "source /etc/profile.d/modules.sh; module purge; module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1;"

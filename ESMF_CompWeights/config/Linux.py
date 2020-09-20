@@ -15,3 +15,6 @@ esmf_env = dict(ESMF_OS = "Linux",
                 ESMF_OPTLEVEL=2,
                 ESMF_ABI=64,
                 ESMF_BUILD_NP=6)
+
+mpirun = "mpirun"
+modules = ""

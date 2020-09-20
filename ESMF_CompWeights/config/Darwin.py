@@ -16,3 +16,5 @@ esmf_env = dict(ESMF_OS = "Darwin",
                 ESMF_ABI=64,
                 ESMF_BUILD_NP=4)
 
+mpirun = "mpirun"
+modules = ""
