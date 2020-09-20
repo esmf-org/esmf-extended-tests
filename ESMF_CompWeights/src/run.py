@@ -47,20 +47,12 @@ def call_script(*args, **kwargs):
 
     # this method found at https://stackoverflow.com/questions/48763362/python-subprocess-kill-with-timeout requires ps_util
     import psutil
-    # print (args)
-    # print (type(args))
 
     args_local = args[0]
     if type(args[0]) is str:
         args_local = args[0].split(",")
 
-    # print (args_local)
-    # print (type(args_local))
-
     run_command = list(args_local)+[kwargs["weights"], kwargs["mb"]]
-
-    # print (run_command)
-    # print (kwargs["rwgtimeout"])
 
     parent=subprocess.Popen(run_command)
     for _ in range(kwargs["rwgtimeout"]): # xx seconds
@@ -74,21 +66,6 @@ def call_script(*args, **kwargs):
         for child in parent.children(recursive=True):  # or parent.children() for recursive=False
             child.kill()
         parent.kill()
-
-    # print ("STATUS = "+str(status))
-
-    # try:
-    #     subprocess.check_call(args[0]+[kwargs["weights"], kwargs["mb"]], timeout=kwargs["rwgtimeout"])
-    # except subprocess.TimeoutExpired as exc:
-    #     if debug_verbosity_high:
-    #         print (exc)
-    #         print ("MPI jobs cannot be reliably killed from Python, it is recommended to issue 'ps' to identify and kill all hanging MPI jobs")
-    # else:
-    #     # add Status columns to the dataframe
-    #     with open (kwargs["weights"]+".out", "r") as outfileobj:
-    #         for line in outfileobj:
-    #             if "Completed weight generation successfully." in line:
-    #                 status = 4.2
 
     return status
 
@@ -173,13 +150,13 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
     if platform == "Cheyenne":
         for jobtuple in job_threads:
             jobtuple[0].start()
-            print (".", end=" ", flush=True)
             jobtuple[1].start()
-            print (".", end=" ", flush=True)
     
         for index, jobtuple in enumerate(job_threads):
             status[index, 0] = jobtuple[0].join()
+            print (".", end=" ", flush=True)
             status[index, 1] = jobtuple[1].join()
+            print (".", end=" ", flush=True)
 
     status_str = np.empty(status.shape, dtype=str)
     for index, val in np.ndenumerate(status):

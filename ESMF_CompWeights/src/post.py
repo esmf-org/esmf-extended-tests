@@ -12,16 +12,23 @@ from src.propagatingthread import PropagatingThread
 
 def call_script(*args, **kwargs):
     status = 0
+
+    args_local = args[0]
+    if type(args[0]) is str:
+        args_local = args[0].split(",")
+
     try:
-        check_call(args[0])
+        check_call(args_local)
     except:
         print (sys.exc_info()[0])
+        raise
     else:
         # add Status columns to the dataframe
         with open (kwargs["weights"]+"-DiffWeights.out", "r") as outfileobj:
             for line in outfileobj:
                 if "SUCCESS" in line:
                     status = 4.2
+
     return status
 
 def do(EXECDIR, config, clickargs):
@@ -64,13 +71,22 @@ def do(EXECDIR, config, clickargs):
                                "walltime=00:30:00", "-q", "economy", "-l",
                                "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
                                "-W", "block=true", "--", pbs_dw] + pbs_args
-                status[index] = call_script(run_command, weights=weights)
+                job = PropagatingThread(target=call_script, args=(run_command,), kwargs={"weights" : weights})
+                job_threads.append(job)
 
             # call all jobs without submitting to queue (serial) to avoid memory issues
             else:
                 run_command = ["bash", pbs_dw] + pbs_args
                 status[index] = call_script(run_command, weights=weights)
                 print (".", end=" ", flush=True)
+
+    # call jobs in queue (parallel)
+    if platform == "Cheyenne":
+        for job in job_threads:
+            job.start()
+        for index, job in enumerate(job_threads):
+            status[index] = job.join()
+            print (".", end=" ", flush=True)
 
     status_str = []
     for i in range(status.shape[0]):
