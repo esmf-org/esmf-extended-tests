@@ -12,7 +12,7 @@ set -e
 
 ESMFDIR=${1}
 BRANCH=${2}
-PLATFORM=${3}
+MODULES=${3}
 TESTCASE=${4}
 GNU10=${5}
 
@@ -39,7 +39,7 @@ export ESMF_ABI=${ESMF_ABI}
 
 # echo ${ESMF_DIR}
 # echo ${BRANCH}
-# echo ${PLATFORM}
+# echo ${MODULES}
 # echo ${TESTCASE}
 # echo ${GNU10}
 
@@ -55,10 +55,7 @@ export ESMF_ABI=${ESMF_ABI}
 unset ESMF_TESTEXHAUSTIVE;
 unset ESMF_CXXCOMPILEOPTS; unset ESMF_F90COMPILEOPTS;
 
-if [[ ${PLATFORM} == "Cheyenne" ]]; then
-    source /etc/profile.d/modules.sh
-    module purge; module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1;
-fi
+eval ${MODULES}
 
 if [[ ${TESTCASE} == "create" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_MESHCREATE

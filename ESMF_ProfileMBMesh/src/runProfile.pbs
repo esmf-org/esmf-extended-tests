@@ -13,16 +13,13 @@ set -e
 n=${1}
 nrun=${2}
 EXECDIR=${3}
-PLATFORM=${4}
-GRID1=${5}
-GRID2=${6}
+MODULES=${4}
+MPIRUN=${5}
+GRID1=${6}
+GRID2=${7}
 
 # load the run environment
-if [[ ${PLATFORM} == "Cheyenne" ]]; then
-    source /etc/profile.d/modules.sh
-    module purge
-    module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1
-fi
+eval ${MODULES}
 
 export ESMF_RUNTIME_PROFILE=ON
 export ESMF_RUNTIME_PROFILE_OUTPUT=SUMMARY
@@ -30,15 +27,9 @@ export ESMF_RUNTIME_PROFILE_OUTPUT=SUMMARY
 for ((ind=1; ind<${nrun}+1; ++ind))
 do
     cd ${EXECDIR}/${n}-${ind}
-    if [[ ${PLATFORM} == "Cheyenne" ]]; then
-        mpiexec_mpt -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out
-        echo "mpiexec_mpt -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out"
-    elif [[ ${PLATFORM} == "Darwin" ]]; then
-        mpirun -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out
-        echo "mpirun -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out"
-    elif [[ ${PLATFORM} == "Linux" ]]; then
-        mpirun -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out
-        echo "mpirun -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out"
-    fi
+
+    echo "${MPIRUN} -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out"
+
+    ${MPIRUN} -n ${n} ${EXECDIR}/${n}-${ind}/MOAB_eval ${GRID1} ${GRID2} > ${EXECDIR}/${n}-${ind}/MOAB_eval${n}-${ind}.out
 done
 

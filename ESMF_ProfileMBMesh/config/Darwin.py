@@ -1,11 +1,14 @@
 import os
 
 RUNDIR="/Users/oehmke/MBMeshPerformanceResults"
-ROOTDIR="/Users/oehmke/sandbox/profiling/ESMF_ProfileMBMesh"
+ROOTDIR="/Users/oehmke/sandbox/esmf-extended-tests/ESMF_ProfileMBMesh"
 SRCDIR=os.path.join(ROOTDIR, "src")
 CFGDIR=os.path.join(ROOTDIR, "config")
 
 procs=(1, 2, 4)
+
+mpirun = "mpirun"
+modules = ""
 
 esmf_env = dict(ESMF_OS = "Darwin",
                 ESMF_COMPILER = "gfortran",

@@ -1,11 +1,14 @@
 import os
 
 RUNDIR="/home/ryan/MBMeshPerformanceResults"
-ROOTDIR="/home/ryan/Dropbox/sandbox/profiling/ESMF_ProfileMBMesh"
+ROOTDIR="/home/ryan/Dropbox/sandbox/esmf-extended-tests/ESMF_ProfileMBMesh"
 SRCDIR=os.path.join(ROOTDIR, "src")
 CFGDIR=os.path.join(ROOTDIR, "config")
 
 procs=(1, 2, 4, 8)
+
+mpirun = "mpirun"
+modules = ""
 
 esmf_env = dict(ESMF_OS = "Linux",
                 ESMF_COMPILER = "gfortran",

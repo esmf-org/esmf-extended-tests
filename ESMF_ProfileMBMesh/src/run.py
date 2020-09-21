@@ -110,6 +110,9 @@ def test(config, clickargs):
 
         SRCDIR = config.SRCDIR
         procs = config.procs
+        MODULES = config.modules
+        MPIRUN = config.mpirun
+
         # import testcase specific platform parameters
         args = config.testcase_args[testcase]
         GRID1 = args["GRID1"]
@@ -128,7 +131,7 @@ def test(config, clickargs):
         for pnum in procs:
             if pnum <= n:
                 pbs_esmf = os.path.join(EXECDIR, "runProfile.pbs")
-                pbs_args = [str(pnum), str(runs), EXECDIR, platform, GRID1, GRID2]
+                pbs_args = [str(pnum), str(runs), EXECDIR, MODULES, MPIRUN, GRID1, GRID2]
 
                 run_command = ""
                 if platform == "Cheyenne":
