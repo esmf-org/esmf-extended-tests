@@ -1,9 +1,12 @@
 import os
 
 RUNDIR="/home/ryan/MBMeshCompWeightsResults"
-SRCDIR="/home/ryan/Dropbox/sandbox/extended-tests/ESMF_CompWeights/src"
-CFGDIR="/home/ryan/Dropbox/sandbox/extended-tests/ESMF_CompWeights/config"
+SRCDIR="/home/ryan/Dropbox/sandbox/esmf-extended-tests/ESMF_CompWeights/src"
+CFGDIR="/home/ryan/Dropbox/sandbox/esmf-extended-tests/ESMF_CompWeights/config"
 RegridTestData="RegridTestData.py"
+
+mpirun = "mpirun"
+modules = ""
 
 esmf_env = dict(ESMF_OS = "Linux",
                 ESMF_COMPILER = "gfortran",
@@ -15,6 +18,3 @@ esmf_env = dict(ESMF_OS = "Linux",
                 ESMF_OPTLEVEL=2,
                 ESMF_ABI=64,
                 ESMF_BUILD_NP=6)
-
-mpirun = "mpirun"
-modules = ""

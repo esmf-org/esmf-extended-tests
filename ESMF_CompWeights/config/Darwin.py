@@ -5,6 +5,9 @@ SRCDIR="/Users/oehmke/sandbox/esmf-extended-tests/ESMF_CompWeights/src"
 CFGDIR="/Users/oehmke/sandbox/esmf-extended-tests/ESMF_CompWeights/config"
 RegridTestData="RegridTestData.py"
 
+mpirun = "mpirun"
+modules = ""
+
 esmf_env = dict(ESMF_OS = "Darwin",
                 ESMF_COMPILER = "gfortran",
                 ESMF_COMM = "openmpi",
@@ -15,6 +18,3 @@ esmf_env = dict(ESMF_OS = "Darwin",
                 ESMF_OPTLEVEL=1,
                 ESMF_ABI=64,
                 ESMF_BUILD_NP=4)
-
-mpirun = "mpirun"
-modules = ""
