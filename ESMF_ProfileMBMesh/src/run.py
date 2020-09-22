@@ -93,7 +93,7 @@ def setup(config, n, runs, testcase):
     return EXECDIR
 
 def call_script(*args, **kwargs):
-    check_call(args)
+    check_call(args[0])
 
 def test(config, clickargs):
 
@@ -145,7 +145,7 @@ def test(config, clickargs):
                 else:  
                     run_command = ["bash", pbs_esmf] + pbs_args
 
-                job_threads.append(PropagatingThread(target=call_script, args=run_command))
+                job_threads.append(PropagatingThread(target=call_script, args=(run_command,)))
         
         for job in job_threads:
             job.start()
