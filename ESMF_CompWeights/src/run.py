@@ -43,7 +43,7 @@ def generate_id(ROOTDIR):
     return (EXECDIR)
 
 def call_script(*args, **kwargs):
-    status = 0
+    status = 4.2
 
     # this method found at https://stackoverflow.com/questions/48763362/python-subprocess-kill-with-timeout requires ps_util
     import psutil
@@ -57,7 +57,7 @@ def call_script(*args, **kwargs):
     parent=subprocess.Popen(run_command)
     for _ in range(kwargs["rwgtimeout"]): # xx seconds
         if parent.poll() is not None:  # process just ended
-            status = 4.2
+            status = parent.returncode
             break
         time.sleep(1)
     else:
@@ -66,6 +66,7 @@ def call_script(*args, **kwargs):
         for child in parent.children(recursive=True):  # or parent.children() for recursive=False
             child.kill()
         parent.kill()
+        status = 6.9
 
     return status
 
@@ -160,8 +161,10 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
 
     status_str = np.empty(status.shape, dtype=str)
     for index, val in np.ndenumerate(status):
-        if status[index] == 4.2:
+        if status[index] == 0:
             status_str[index] = "P"
+        elif status[index] == 6.9:
+            status_str[index] = "T"
         else:
             status_str[index] = "F"
 

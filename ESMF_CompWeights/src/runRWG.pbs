@@ -37,6 +37,6 @@ mb=${10}
 eval ${MODULES}
 
 cd ${EXECDIR};
-# echo "${MPIRUN} -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out"
-${MPIRUN} -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options_local} ${mb} > ${weights}.out
+# echo "${MPIRUN} -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options} ${mb} > ${weights}.out"
+${MPIRUN} -n ${n} ${EXECDIR}/ESMF_RegridWeightGen -s ${grid1} -d ${grid2} -w ${weights}.nc -m ${method} ${options} ${mb} > ${weights}.out
 

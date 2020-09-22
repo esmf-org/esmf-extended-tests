@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-import os, re
+import os, re, sys
 from subprocess import check_call, TimeoutExpired
 from shutil import copy2
 from time import localtime, strftime
