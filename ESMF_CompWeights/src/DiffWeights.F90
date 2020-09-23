@@ -80,10 +80,8 @@ program DiffWeights
     tol = 10e-14
   else
     call ESMF_UtilGetArg(ind+1, argvalue=tol_string)
-    tol = ESMF_UtilString2Int(tol_string)
-    ! this needs to be converted to double
-    print *, "Tolerance conversion to R8 not yet available, exit!"
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
+    tol = ESMF_UtilString2Real(tol_string, rc=status)
+    if (status /= ESMF_SUCCESS) call ESMF_Finalize(endflag=ESMF_END_ABORT)
   endif
 
   ! Read factors from weights file

@@ -15,6 +15,7 @@ MODULES=${2}
 MPIRUN=${3}
 weights=${4}
 weights_mb=${5}
+tol=${6}
 
 # diffweights.F90 only runs in serial
 n=1
@@ -26,11 +27,12 @@ n=1
 # echo ${MPIRUN}
 # echo ${weights}
 # echo ${weights_mb}
+# echo ${tol}
 
 # load the run environment
 eval ${MODULES}
 
 cd ${EXECDIR};
-# echo "mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out"
-${MPIRUN} -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} > ${EXECDIR}/${weights}-DiffWeights.out
+# echo "mpirun -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} -tol ${tol} > ${EXECDIR}/${weights}-DiffWeights.out"
+${MPIRUN} -n ${n} ${EXECDIR}/DiffWeights -w1 ${EXECDIR}/${weights} -w2 ${EXECDIR}/${weights_mb} -tol ${tol} > ${EXECDIR}/${weights}-DiffWeights.out 2>&1
 

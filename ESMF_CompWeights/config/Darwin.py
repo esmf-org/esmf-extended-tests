@@ -5,6 +5,8 @@ SRCDIR="/Users/oehmke/sandbox/esmf-extended-tests/ESMF_CompWeights/src"
 CFGDIR="/Users/oehmke/sandbox/esmf-extended-tests/ESMF_CompWeights/config"
 RegridTestData="RegridTestData.py"
 
+diff_tolerance = 1e-15
+
 mpirun = "mpirun"
 modules = ""
 

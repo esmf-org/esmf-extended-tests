@@ -5,6 +5,8 @@ SRCDIR="/glade/work/rokuingh/sandbox/esmf-extended-tests/ESMF_CompWeights/src"
 CFGDIR="/glade/work/rokuingh/sandbox/esmf-extended-tests/ESMF_CompWeights/config"
 RegridTestData="RegridTestData.py"
 
+diff_tolerance = 1e-15
+
 mpirun = "mpiexec_mpt"
 modules = "source /etc/profile.d/modules.sh; module purge; module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1;"
 

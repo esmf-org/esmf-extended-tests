@@ -4,16 +4,22 @@
 
 SourceGrid:DestinationGrid:RegridMethod:Options:RelativeError:AreaError:ConservationError
 
-# ne30np4_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc center : 10E-05 : 10E-04 : 10E-16
+# timeout mb only
+ne30np4_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc center : 10E-05 : 10E-04 : 10E-16
 
 
-# global grids with pole options
+# # errors out of RWG with different mesh types message (one is esmf and other moab..) 
+# FVCOM_grid2d_20120314.nc : scrip_regional_1140x690.nc : conserve : --src_type UGRID -r --src_meshname fvcom_mesh -i : 10E-04 : 10E-03 : 10E-15
+fv1.9x2.5_050503.nc : ne30np4-t2.nc : conserve : -p none : 10E-03 : 10E-02 : 10E-13
+
+
+# # global grids with pole options
 ll2.5deg_grid.nc : T42_grid.nc      : bilinear : -p none    : 10E-04 : 10E-03 : 10E-16
-T42_grid.nc      : ll2.5deg_grid.nc : bilinear : -p 4       : 10E-04 : 10E-03 : 10E-16
-
-# global to global with file type arguments
-ll1deg_grid.nc : ll2.5deg_grid.nc : bilinear : -t SCRIP         : 10E-05 : 10E-04 : 10E-16
-ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --dst_type SCRIP : 10E-04 : 10E-04 : 10E-13
+# T42_grid.nc      : ll2.5deg_grid.nc : bilinear : -p 4       : 10E-04 : 10E-03 : 10E-16
+# 
+# # global to global with file type arguments
+# ll1deg_grid.nc : ll2.5deg_grid.nc : bilinear : -t SCRIP         : 10E-05 : 10E-04 : 10E-16
+# ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --dst_type SCRIP : 10E-04 : 10E-04 : 10E-13
 # 
 # # destination regional
 # T42_grid.nc : wr50a_090614.nc : bilinear : --dst_regional : 10E-04 : 10E-04 : 10E-16
@@ -60,22 +66,22 @@ ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --dst_type SCRIP : 10E-04 : 10E-0
 # # global to cubed sphere with pole all
 # fv1.9x2.5_050503.nc : ne30np4-t2.nc : bilinear : -p all  : 10E-04 : 10E-03 : 10E-16
 # # hang
-# # fv1.9x2.5_050503.nc : ne30np4-t2.nc : conserve : -p none : 10E-03 : 10E-02 : 10E-13
+# fv1.9x2.5_050503.nc : ne30np4-t2.nc : conserve : -p none : 10E-03 : 10E-02 : 10E-13
 # 
 # # regional to cubed sphere, conservative with masking
 # wr50a_090614.nc : ne30np4-t2.nc : bilinear : --src_regional -i : 10E-06 : 10E-05 : 10E-16
 # #hang
-# # ar9v4_100920.nc : ne30np4-t2.nc : conserve : --src_regional -i : 10E-04 : 10E-03 : 10E-14
-
-
-
-# FVCOM_grid2d.nc:  unstructured grid in UGRID format
+# ar9v4_100920.nc : ne30np4-t2.nc : conserve : --src_regional -i : 10E-04 : 10E-03 : 10E-14
+# 
+# 
+# 
+# # FVCOM_grid2d.nc:  unstructured grid in UGRID format
 # FVCOM_grid2d_20120314.nc : scrip_regional_1140x690.nc : conserve : --src_type UGRID -r --src_meshname fvcom_mesh -i : 10E-04 : 10E-03 : 10E-15
 # scrip_regional_1140x690.nc : FVCOM_grid2d_20120314.nc : conserve : --dst_type UGRID -r --dst_meshname fvcom_mesh : 10E-05 : 10E-04 : 10E-15
 # FVCOM_grid2d_20130228.nc : scrip_regional_1140x690.nc : conserve : --src_type UGRID -r --src_meshname fvcom_mesh -i : 10E-04 : 10E-03 : 10E-15
-## hang longer than 1 min
-## scrip_regional_1140x690.nc : FVCOM_grid2d_20130228.nc : conserve : --dst_type UGRID -r --dst_meshname fvcom_mesh : 10E-05 : 10E-04 : 10E-15
-
+# # hang longer than 1 min
+# scrip_regional_1140x690.nc : FVCOM_grid2d_20130228.nc : conserve : --dst_type UGRID -r --dst_meshname fvcom_mesh : 10E-05 : 10E-04 : 10E-15
+# 
 # # UGRID
 # FVCOM_grid2d.nc : scrip_regional_1140x690.nc : conserve : --src_type UGRID -r --src_meshname fvcom_mesh -i : 10E-04 : 10E-03 : 10E-15
 # FVCOM_grid2d.nc : scrip_regional_1140x690.nc : bilinear : --src_type UGRID -r --src_meshname fvcom_mesh -i --src_loc corner : 10E-07 : 10E-06 : 10E-16
@@ -86,12 +92,12 @@ ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --dst_type SCRIP : 10E-04 : 10E-0
 # FVCOM_grid2d.nc : scrip_regional_1140x690.nc : bilinear : --src_type UGRID -r --src_meshname fvcom_mesh -i --src_loc center : 10E-07 : 10E-06 : 10E-16
 # scrip_regional_1140x690.nc : FVCOM_grid2d.nc : bilinear : --dst_type UGRID -r --dst_meshname fvcom_mesh --dst_loc center: 10E-08 : 10E-07 : 10E-16
 # # timeout mb only
-# #ne30np4_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc center : 10E-05 : 10E-04 : 10E-16
+# ne30np4_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc center : 10E-05 : 10E-04 : 10E-16
 # fv1.9x2.5_050503.nc : ne30np4_esmf.nc : bilinear : -p all --dst_type ESMF --dst_loc center : 10E-04 : 10E-03 : 10E-16
 # # timeout mb only
-# #ne30np4dual_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc corner : 10E-05 : 10E-04 : 10E-16
+# ne30np4dual_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_loc corner : 10E-05 : 10E-04 : 10E-16
 # fv1.9x2.5_050503.nc : ne30np4dual_esmf.nc : bilinear : -p all --dst_type ESMF --dst_loc corner : 10E-04 : 10E-03 : 10E-16
-
+# 
 # # norm type
 # # timeout mb only
 # mpas_uniform_10242.nc  : ne60np4_pentagons_100408.nc : conserve : --src_type ESMF --norm_type dstarea : 10E-03 : 10E-02 : 10E-13
