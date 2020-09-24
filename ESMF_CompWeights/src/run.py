@@ -42,7 +42,7 @@ def generate_id(ROOTDIR):
 
     return (EXECDIR)
 
-def call_script(*args, **kwargs):
+def run_job_timeout(*args, **kwargs):
     status = 4.2
 
     # this method found at https://stackoverflow.com/questions/48763362/python-subprocess-kill-with-timeout requires ps_util
@@ -67,6 +67,22 @@ def call_script(*args, **kwargs):
             child.kill()
         parent.kill()
         status = 6.9
+
+    return status
+
+def submit_batch_job(*args, **kwargs):
+    status = 4.2
+
+    # this method found at https://stackoverflow.com/questions/48763362/python-subprocess-kill-with-timeout requires ps_util
+    import psutil
+
+    args_local = args[0]
+    if type(args[0]) is str:
+        args_local = args[0].split(",")
+
+    run_command = list(args_local)+[kwargs["weights"], kwargs["mb"]]
+
+    status = check_call(args_local)
 
     return status
 
@@ -119,8 +135,10 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
 
         run_command = ""
         if platform == "Cheyenne":
+            min = floor(rwgtimeout/60)
+            sec = rwgtimeout%60
             run_command = ["qsub", "-N", "runRWG", "-A", "P93300606", "-l",  
-                           "walltime=00:30:00", "-q", "economy", "-l",
+                           "walltime=00:"+str(min)+":"+str(sec), "-q", "economy", "-l",
                            "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
                            "-W", "block=true", "--", pbs_rwg] + pbs_args
 
@@ -128,8 +146,8 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
             run_command2 = ','.join(run_command)
 
             # pass as a tuple to avoid PropagatingThread expanding incorrectly to list (spaces in options)
-            job1 = PropagatingThread(target=call_script, args=(run_command,), kwargs={'rwgtimeout' : rwgtimeout, 'weights' : weights, 'mb' : ""})
-            job2 = PropagatingThread(target=call_script, args=(run_command,), kwargs={'rwgtimeout' : rwgtimeout, 'weights' : weights_mb, 'mb' : '--moab'})
+            job1 = PropagatingThread(target=submit_batch_job, args=(run_command,), kwargs={'weights' : weights, 'mb' : ""})
+            job2 = PropagatingThread(target=submit_batch_job, args=(run_command,), kwargs={'weights' : weights_mb, 'mb' : '--moab'})
 
             # set up as a tuple of two jobs to conform to the structure of two runs per row of the data frame
             job_threads.append((job1, job2))
@@ -140,10 +158,10 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
             run_command = ["bash", pbs_rwg] + pbs_args
             run_command2 = (','.join(run_command))
 
-            status[index, 0] = call_script(run_command2, rwgtimeout=rwgtimeout, weights=weights, mb="")
+            status[index, 0] = run_job_timeout(run_command2, rwgtimeout=rwgtimeout, weights=weights, mb="")
             print (".", end=" ", flush=True)
 
-            status[index, 1] = call_script(run_command2, rwgtimeout=rwgtimeout, weights=weights_mb, mb="--moab")
+            status[index, 1] = run_job_timeout(run_command2, rwgtimeout=rwgtimeout, weights=weights_mb, mb="--moab")
             print (".", end=" ", flush=True)
 
 

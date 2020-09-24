@@ -11,34 +11,25 @@ import pandas
 from src.propagatingthread import PropagatingThread
 
 def call_script(*args, **kwargs):
-    status = 6.9
-    complete = False
+    status = 4.2
 
     args_local = args[0]
     if type(args[0]) is str:
         args_local = args[0].split(",")
 
-    tol = kwargs["tol"]
-
-    while complete == False:
-        args_local[-1] = str(tol)
-        try:
-            check_call(args_local)
-        except:
-            print (sys.exc_info()[0])
-            raise
-        else:
-            # add Status columns to the dataframe
-            with open (kwargs["weights"]+"-DiffWeights.out", "r") as outfileobj:
-                for line in outfileobj:
-                    if "SUCCESS" in line:
-                        status = tol
-                        complete = True
-                    elif "FAIL" in line:
-                        tol = tol * 10
-                        if tol > 1e-1:
-                            status = 4.2
-                            complete = True
+    try:
+        check_call(args_local)
+    except:
+        print (sys.exc_info()[0])
+        raise
+    else:
+        # add Status columns to the dataframe
+        with open (kwargs["weights"]+"-DiffWeights.out", "r") as outfileobj:
+            for line in outfileobj:
+                if "SUCCESS" in line:
+                    status = kwargs["tol"]
+                elif "FAIL" in line:
+                    status = 6.9
 
     return status
 
@@ -57,8 +48,8 @@ def do(EXECDIR, config, clickargs):
     # create numpy array of length of data frame for status values
     status = 7.7*np.ones(len(df))
 
-    # run DiffWeights on all testcase pairs with positive Status
-    job_threads = []
+    # set up DiffWeights jobs to be run
+    job_list = []
     run_command = []
     # used to map indices of threads to dataframe
     thread2dataframe_map = []
@@ -78,7 +69,7 @@ def do(EXECDIR, config, clickargs):
 
             # set up the call to the pbs script
             pbs_dw = os.path.join(SRCDIR, "runDiffWeights.pbs")
-            pbs_args = [EXECDIR, MODULES, MPIRUN, weights, weights_mb, tol]
+            pbs_args = [EXECDIR, MODULES, MPIRUN, weights, weights_mb, str(tol)]
 
             run_command = ""
             if platform == "Cheyenne":
@@ -86,27 +77,63 @@ def do(EXECDIR, config, clickargs):
                                "walltime=00:30:00", "-q", "economy", "-l",
                                "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
                                "-W", "block=true", "--", pbs_dw] + pbs_args
-                job = PropagatingThread(target=call_script, args=(run_command,), kwargs={"weights" : weights, "tol" : tol})
-                job_threads.append(job)
-
-            # call all jobs without submitting to queue
             else:
                 run_command = ["bash", pbs_dw] + pbs_args
-                status[index] = call_script(run_command, weights=weights, tol=tol)
-                print (".", end=" ", flush=True)
+            # this should be a tuple, but tolerance needs to be updated..
+            job_list.append([run_command, weights, tol])
 
     # call jobs in queue (parallel)
     if platform == "Cheyenne":
-        for job in job_threads:
-            job.start()
-        for index, job in enumerate(job_threads):
+        jobs_running = []
+        for jobtuple in job_list:
+            job_ready = PropagatingThread(target=call_script, args=(jobtuple[0],), kwargs={"weights" : jobtuple[1], "tol" : jobtuple[2]})
+            job_ready.start()
+            jobs_running.append(job_ready)
+        for index, job in enumerate(jobs_running):
             status[thread2dataframe_map[index]] = job.join()
             print (".", end=" ", flush=True)
+    # execute jobs in serial
+    else:
+        for index, jobtuple in enumerate(job_list):
+            status[thread2dataframe_map[index]] = call_script(jobtuple[0], weights=jobtuple[1], tol=jobtuple[2])
+            print (".", end=" ", flush=True)
 
+    # iterate DiffWeights until passing tolerance level is found, or 0
+    while np.any(status[:] == 6.9):
+        ind = np.where(status[:] == 6.9)
+        for j in ind[0]:
+            k = thread2dataframe_map[j]
+
+            job_tuple = job_list[k]
+            run_command = job_tuple[0]
+            weights = job_tuple[1]
+            tol = job_tuple[2]
+
+            # update tol
+            tol10 = tol * 10
+            if tol10 > 1e-1:
+                break
+            run_command[-1] = str(tol10)
+            job_list[k][2] = tol10
+
+            jobs_running = []
+            if platform == "Cheyenne":
+                job = PropagatingThread(target=call_script, args=(run_command,), kwargs={"weights" : weights, "tol" : tol10})
+                job.start()
+                jobs_running.append((job, k))
+            else:
+                status[k] = call_script(run_command, weights=weights, tol=tol10)
+                print (".", end=" ", flush=True)
+        if platform == "Cheyenne":
+            for jobtuple in enumerate(jobs_running):
+                status[jobtuple[1]] = jobtuple[0].join()
+                print (".", end=" ", flush=True)
+
+    # convert numerical status values to strings for addition to the dataframe
     status_str = []
     for i in range(status.shape[0]):
         if status[i] == 4.2:
-            status_str.append("Fail")
+            status_str.append("OhNO!")
         elif status[i] == 6.9:
             status_str.append("Fail")
         elif status[i] == 7.7:
