@@ -63,7 +63,7 @@ def do(EXECDIR, config, clickargs):
     # used to map indices of threads to dataframe
     thread2dataframe_map = []
     for index, testcase in df.iterrows():
-        if (testcase["Status RWG MBMesh"] == "P") and (testcase["Status RWG Native"] == "P"):
+        if (testcase["RWG MBMesh"] == "Pass") and (testcase["RWG Native"] == "Pass"):
 
             thread2dataframe_map.append(index)
 
@@ -114,7 +114,7 @@ def do(EXECDIR, config, clickargs):
         else:
             status_str.append(str('{:.0e}'.format(status[i])))
 
-    df['Status Diff Weights'] = status_str
+    df['Diff Weights'] = status_str
 
     return df
 
@@ -136,8 +136,11 @@ def process(EXECDIR, config, clickargs):
         # Run DiffWeights.F90 on all testcase pairs which have positive Status, return dataframe with Pass column added
         dfPass = do(EXECDIR, config, clickargs)
 
+        # trim some columns from the dataframe
+        keep_col = ["SourceGrid", "DestinationGrid", "RegridMethod","Options", "RWG MBMesh", "RWG Native", "Diff Weights"]
+        dfPrint = dfPass[keep_col]
         print ('')
-        print (dfPass)
+        print (dfPrint)
 
         print ("\nWeight file comparison completed successfully.", strftime("%a, %d %b %Y %H:%M:%S", localtime()))
     

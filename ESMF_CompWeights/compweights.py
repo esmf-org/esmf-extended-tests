@@ -49,7 +49,8 @@ def cli(n, branch, esmfmkfile, platform, gnu10, rwgtimeout, debug_execdir):
                  "gnu10": gnu10,
                  "rwgtimeout": rwgtimeout}
 
-    df = pandas.read_csv(os.path.join(config.CFGDIR, config.RegridTestData), sep=":", skipinitialspace=True, comment="#")
+    df_dirty = pandas.read_csv(os.path.join(config.CFGDIR, config.RegridTestData), sep=":", skipinitialspace=True, comment="#")
+    df = df_dirty.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
     # if we are not in debug mode
     if EXECDIR == "":

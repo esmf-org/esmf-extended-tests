@@ -9,8 +9,8 @@ ne30np4_esmf.nc : fv1.9x2.5_050503.nc : bilinear : -p all --src_type ESMF --src_
 
 
 # # errors out of RWG with different mesh types message (one is esmf and other moab..) 
-# FVCOM_grid2d_20120314.nc : scrip_regional_1140x690.nc : conserve : --src_type UGRID -r --src_meshname fvcom_mesh -i : 10E-04 : 10E-03 : 10E-15
-fv1.9x2.5_050503.nc : ne30np4-t2.nc : conserve : -p none : 10E-03 : 10E-02 : 10E-13
+FVCOM_grid2d_20120314.nc : scrip_regional_1140x690.nc : conserve : --src_type UGRID -r --src_meshname fvcom_mesh -i : 10E-04 : 10E-03 : 10E-15
+# fv1.9x2.5_050503.nc : ne30np4-t2.nc : conserve : -p none : 10E-03 : 10E-02 : 10E-13
 
 
 # # global grids with pole options

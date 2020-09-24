@@ -2,7 +2,7 @@
 #
 #PBS -N runDiffWeights
 #PBS -A P93300606
-#PBS -l walltime=00:30:00
+#PBS -l walltime=00:10:00
 #PBS -q economy
 #PBS -l select=1:ncpus=36:mpiprocs=36
 #PBS -j oe

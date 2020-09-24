@@ -159,17 +159,17 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
             status[index, 1] = jobtuple[1].join()
             print (".", end=" ", flush=True)
 
-    status_str = np.empty(status.shape, dtype=str)
-    for index, val in np.ndenumerate(status):
-        if status[index] == 0:
-            status_str[index] = "P"
-        elif status[index] == 6.9:
-            status_str[index] = "T"
+    status_str = np.zeros(shape=status.shape, dtype='<U256')
+    for (x,y), val in np.ndenumerate(status):
+        if val == 0:
+            status_str[x,y] = "Pass"
+        elif val == 6.9:
+            status_str[x,y] = "Timeout"
         else:
-            status_str[index] = "F"
+            status_str[x,y] = "Fail"
 
-    df['Status RWG MBMesh'] = status_str[:,1].tolist()
-    df['Status RWG Native'] = status_str[:,0].tolist()
+    df['RWG MBMesh'] = status_str[:,1].tolist()
+    df['RWG Native'] = status_str[:,0].tolist()
 
     # write status df to read when post processing in separate execution
     df.to_csv(os.path.join(EXECDIR, "StatusDataFrame.csv"))
