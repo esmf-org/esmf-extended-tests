@@ -52,11 +52,11 @@ def do(EXECDIR, config, clickargs):
     job_list = []
     run_command = []
     # used to map indices of threads to dataframe
-    thread2dataframe_map = []
+    job2dataframe_map = []
     for index, testcase in df.iterrows():
         if (testcase["RWG MBMesh"] == "Pass") and (testcase["RWG Native"] == "Pass"):
 
-            thread2dataframe_map.append(index)
+            job2dataframe_map.append(index)
 
             srcgrid = testcase["SourceGrid"].strip()
             dstgrid = testcase["DestinationGrid"].strip()
@@ -90,21 +90,23 @@ def do(EXECDIR, config, clickargs):
             job_ready.start()
             jobs_running.append(job_ready)
         for index, job in enumerate(jobs_running):
-            status[thread2dataframe_map[index]] = job.join()
+            status[job2dataframe_map[index]] = job.join()
             print (".", end=" ", flush=True)
     # execute jobs in serial
     else:
         for index, jobtuple in enumerate(job_list):
-            status[thread2dataframe_map[index]] = call_script(jobtuple[0], weights=jobtuple[1], tol=jobtuple[2])
+            status[job2dataframe_map[index]] = call_script(jobtuple[0], weights=jobtuple[1], tol=jobtuple[2])
             print (".", end=" ", flush=True)
 
     # iterate DiffWeights until passing tolerance level is found, or 0
     while np.any(status[:] == 6.9):
         ind = np.where(status[:] == 6.9)
-        for j in ind[0]:
-            k = thread2dataframe_map[j]
+        jobs_running = []
+        for i in ind[0]:
+            # link index of job_list to status list
+            job_ind = job2dataframe_map.index(i)
 
-            job_tuple = job_list[k]
+            job_tuple = job_list[job_ind]
             run_command = job_tuple[0]
             weights = job_tuple[1]
             tol = job_tuple[2]
@@ -114,18 +116,17 @@ def do(EXECDIR, config, clickargs):
             if tol10 > 1e-1:
                 break
             run_command[-1] = str(tol10)
-            job_list[k][2] = tol10
+            job_list[job_ind][2] = tol10
 
-            jobs_running = []
             if platform == "Cheyenne":
                 job = PropagatingThread(target=call_script, args=(run_command,), kwargs={"weights" : weights, "tol" : tol10})
                 job.start()
-                jobs_running.append((job, k))
+                jobs_running.append((job, i))
             else:
-                status[k] = call_script(run_command, weights=weights, tol=tol10)
+                status[i] = call_script(run_command, weights=weights, tol=tol10)
                 print (".", end=" ", flush=True)
         if platform == "Cheyenne":
-            for jobtuple in enumerate(jobs_running):
+            for jobtuple in jobs_running:
                 status[jobtuple[1]] = jobtuple[0].join()
                 print (".", end=" ", flush=True)
 

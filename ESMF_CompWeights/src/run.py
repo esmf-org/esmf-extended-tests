@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8
 
-import os, re
+import os, re, sys
 import subprocess
 from shutil import copy2
 from time import localtime, strftime
@@ -82,7 +82,29 @@ def submit_batch_job(*args, **kwargs):
 
     run_command = list(args_local)+[kwargs["weights"], kwargs["mb"]]
 
-    status = check_call(args_local)
+    try:
+        subprocess.check_call(run_command)
+    except subprocess.CalledProcessError as exc:
+        # 15 indicates clean termination triggered by ESMF_Finalize
+        if exc.returncode == 15:
+            pass
+        # 140 indicates walltime exceeded
+        elif exc.returncode == 140:
+            status = 6.9
+            pass
+        # 137 indicates processor time limit exceeded
+        elif exc.returncode == 137:
+            status = 6.9
+            pass
+        # any other code indicated unexpected and possibly unhandled return from ESMF, should be investigated
+        else:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+    else:
+        status = 0
 
     return status
 
@@ -119,7 +141,6 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
     status = np.zeros([len(df), 2])
 
     job_threads = []
-    run_command = []
     for index, testcase in df.iterrows():
         srcgrid = testcase["SourceGrid"].strip()
         dstgrid = testcase["DestinationGrid"].strip()
@@ -138,7 +159,7 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
             min = floor(rwgtimeout/60)
             sec = rwgtimeout%60
             run_command = ["qsub", "-N", "runRWG", "-A", "P93300606", "-l",  
-                           "walltime=00:"+str(min)+":"+str(sec), "-q", "economy", "-l",
+                           "walltime=00:"+str(min).zfill(2)+":"+str(sec).zfill(2), "-q", "economy", "-l",
                            "select=1:ncpus=36:mpiprocs=36", "-j", "oe", "-m", "n", 
                            "-W", "block=true", "--", pbs_rwg] + pbs_args
 
@@ -146,8 +167,8 @@ def do(df, EXECDIR, DATADIR, config, clickargs):
             run_command2 = ','.join(run_command)
 
             # pass as a tuple to avoid PropagatingThread expanding incorrectly to list (spaces in options)
-            job1 = PropagatingThread(target=submit_batch_job, args=(run_command,), kwargs={'weights' : weights, 'mb' : ""})
-            job2 = PropagatingThread(target=submit_batch_job, args=(run_command,), kwargs={'weights' : weights_mb, 'mb' : '--moab'})
+            job1 = PropagatingThread(target=submit_batch_job, args=(run_command2,), kwargs={'weights' : weights, 'mb' : ""})
+            job2 = PropagatingThread(target=submit_batch_job, args=(run_command2,), kwargs={'weights' : weights_mb, 'mb' : '--moab'})
 
             # set up as a tuple of two jobs to conform to the structure of two runs per row of the data frame
             job_threads.append((job1, job2))
