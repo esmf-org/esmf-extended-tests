@@ -29,7 +29,10 @@ def call_script(*args, **kwargs):
                 if "SUCCESS" in line:
                     status = kwargs["tol"]
                 elif "FAIL" in line:
-                    status = 6.9
+                    if kwargs["tol"] > 1e-1:
+                        status = 8.8
+                    else:
+                        status = 6.9
 
     return status
 
@@ -113,8 +116,6 @@ def do(EXECDIR, config, clickargs):
 
             # update tol
             tol10 = tol * 10
-            if tol10 > 1e-1:
-                break
             run_command[-1] = str(tol10)
             job_list[job_ind][2] = tol10
 
@@ -136,6 +137,8 @@ def do(EXECDIR, config, clickargs):
         if status[i] == 4.2:
             status_str.append("OhNO!")
         elif status[i] == 6.9:
+            status_str.append("OhNO!")
+        elif status[i] == 8.8:
             status_str.append("Fail")
         elif status[i] == 7.7:
             status_str.append("N/A")
