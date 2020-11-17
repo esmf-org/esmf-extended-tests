@@ -28,7 +28,7 @@ gmake dryrun - download the input grid files without running the demo
 gmake dust  - clean out .o and .mod files
 gmake clean - clean the directory and start over
 
-The input grid files will be downloaded from http:www.earthsystemmodeling.org/download/data and stored in the input directory.  If you would like to test
+The input grid files will be downloaded from http://data.earthsystemmodeling.org/download/data/ and stored in the input directory.  If you would like to test
 with a different set of data files you must put them in the input directory.  The 
 new test case can then be added to the RegridTestData.txt file.
 
