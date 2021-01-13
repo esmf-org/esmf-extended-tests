@@ -12,6 +12,7 @@ import subprocess
 from time import localtime, strftime, time
 import click
 import pandas
+import psutil
 
 @click.command()
 @click.option('--n', type=int, default=4, help='Number of processing cores, default to 4')
@@ -19,7 +20,7 @@ import pandas
 @click.option('--branch', type=str, default="develop", help='Branch of the ESMF repo to use, default to develop')
 @click.option('--esmfmkfile', type=str, default="", help='Path to esmf.mk, will build ESMF if not supplied')
 @click.option('--platform', type=str, default="Linux", help='Platform configuration [Cheyenne, Darwin, Linux], defaults to Linux')
-@click.option('--gnu10', is_flag=True, default=False, help='Fix for gnu10 ESMF compiler options, defaults to False')
+@click.option('--gnu10', is_flag=True, default=True, help='Fix for gnu10 ESMF compiler options, defaults to True')
 @click.option('--rwgtimeout', type=int, default=60, help='Timeout in seconds for RegridWeightGen.F90, defaults to 60 seconds')
 @click.option('--debug_execdir', type=str, default="", help='Execution directory to use for debugging purposes')
 def cli(n, branch, esmfmkfile, platform, gnu10, rwgtimeout, debug_execdir):
