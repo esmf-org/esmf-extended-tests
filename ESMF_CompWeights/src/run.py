@@ -113,7 +113,7 @@ def setup(df):
         # use a set to only save unique grids
         grids = {}
         for index, testcase in df.iterrows():
-            datadir = "http://www.earthsystemmodeling.org/download/data"
+            datadir = "http://data.earthsystemmodeling.org/download/data/"
             srcgrid = testcase["SourceGrid"].strip()
             dstgrid = testcase["DestinationGrid"].strip()
            
