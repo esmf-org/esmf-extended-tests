@@ -55,7 +55,7 @@ while (<$DATAFILE>) {
     if (/^[ \t]*wgettar/) {
         @tokens=split;
         if (!-e "$DATADIR$tokens[1]") {
-            system("cd $DATADIR; wget -q -nd http://www.earthsystemmodeling.org/download/data/$tokens[1]") == 0
+            system("cd $DATADIR; wget -q -nd http://data.earthsystemmodeling.org/download/data/$tokens[1]") == 0
                 or $fail = 1;
             if ($fail) {system("echo 'wget FAILED :$tokens[1]\n'");}
             else {system("echo 'wget SUCCESS :$tokens[1] ... untar ...\n'");}
@@ -159,12 +159,12 @@ for (my $i=$test_case_start; $i<$test_case_start+$num_cases; $i++) {
     
     # Get the grid file if not exist
     if (!-e "$DATADIR$grid1") {
-        system("cd $DATADIR; wget -q -nd http://www.earthsystemmodeling.org/download/data/$grid1") == 0
+        system("cd $DATADIR; wget -q -nd http://data.earthsystemmodeling.org/download/data/$grid1") == 0
                or $fail = 1;
         if ($fail) {system("echo 'wget FAILED :$grid1\n' > $weights.out");} 
     }
     if (!-e "$DATADIR$grid2") {
-        system("cd $DATADIR; wget -q -nd http://www.earthsystemmodeling.org/download/data/$grid2") == 0
+        system("cd $DATADIR; wget -q -nd http://data.earthsystemmodeling.org/download/data/$grid2") == 0
                or $fail = 1;
         if ($fail) {system("echo 'wget FAILED :$grid2\n' >> $weights.out");}
     }
