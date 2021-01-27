@@ -48,13 +48,13 @@ include $(ESMFMKFILE)
 
 
 # -----------------------------------------------------------------------------
-MOAB_eval_regrid-conservative:
+MOAB_eval_regridbilinear:
 
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 .PHONY: clean distclean
 clean:
-	rm -rf MOAB_eval_regrid-conservative *.o *.mod traceout
+	rm -rf MOAB_eval_regridbilinear *.o *.mod traceout
 distclean: clean
 	rm -rf PET*.ESMF_LogFile *.err *.out *.csv ESMF_Profile* traceout

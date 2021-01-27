@@ -5,6 +5,6 @@ src/create/MOAB_eval_create
 src/dual/MOAB_eval_dual
 src/grid2mesh/MOAB_eval_grid2mesh
 src/redist/MOAB_eval_redist
-src/regrid-bilinear/MOAB_eval_regrid-bilinear
-src/regrid-conservative/MOAB_eval_regrid-conservative
+src/regridbilinear/MOAB_eval_regridbilinear
+src/regridconservative/MOAB_eval_regridconservative
 src/rendezvous/MOAB_eval_rendezvous

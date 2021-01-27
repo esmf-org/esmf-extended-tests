@@ -69,17 +69,17 @@ elif [[ ${TESTCASE} == "grid2mesh" ]]; then
 elif [[ ${TESTCASE} == "redist" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_MESHREDIST
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_MESHREDIST
-elif [[ ${TESTCASE} == "regrid-bilinear" ]]; then
+elif [[ ${TESTCASE} == "regridbilinear" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_REGRID
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_REGRID
-elif [[ ${TESTCASE} == "regrid-conservative" ]]; then
+elif [[ ${TESTCASE} == "regridconservative" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_REGRID
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_REGRID
 elif [[ ${TESTCASE} == "rendezvous" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_RENDEZVOUS
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_RENDEZVOUS
 else
-  echo 'USAGE: TESTCASE must be set to create, dual, grid2mesh, redist, regrid-bilinear, regrid-conservative, or rendezvous'
+  echo 'USAGE: TESTCASE must be set to create, dual, grid2mesh, redist, regridbilinear, regridconservative, or rendezvous'
   exit 1
 fi
 
