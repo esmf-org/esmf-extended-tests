@@ -32,6 +32,8 @@ testcase_args = dict(
                   GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
     regridbilinear = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),
                           GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
+    regridbilinearcorner = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),
+                                GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
     regridconservative = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),
                               GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
     rendezvous = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),
