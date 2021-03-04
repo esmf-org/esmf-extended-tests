@@ -15,7 +15,7 @@ import click
 
 @click.command()
 @click.option('-n', type=int, required=True, help='Number of processing cores')
-@click.option('-testcase', type=str, required=True, help='Test case  [create,dual,grid2mesh,redist,regridbilinear,regridbilinearcorner,regridconservative,rendezvous]')
+@click.option('-testcase', type=str, required=True, help='Test case  [create,createfromdesc,dual,grid2mesh,redist,regridbilinear,regridbilinearcorner,regridconservative,rendezvous]')
 @click.option('--branch', type=str, default="develop", help='Branch of the ESMF repo to use, defaults to develop')
 @click.option('--esmfmkfile', type=str, default="", help='Path to esmf.mk, will build ESMF if not supplied')
 @click.option('--platform', type=str, default="Darwin", help='Platform configuration [Cheyenne, Darwin, Linux], defaults to Darwin')
