@@ -29,6 +29,9 @@ def timing(EXECDIR, config, clickargs):
 
     timeoutfilename = os.path.join(EXECDIR, "mbmesh_"+testcase+"_timing_profile_results.csv")
 
+    template_cols = 0
+    template_cols_set = False
+    
     for num_run in range(1,runs+1):
         for num_procs in procs:
             if num_procs <= n:
@@ -39,14 +42,14 @@ def timing(EXECDIR, config, clickargs):
                 out = open(rftmp,"a")
                 with open(resfilename) as f:
                     for line in f:
-                        # remove leading whitespace
+                        # remove leading whitespace from ESMF_Profile nesting
                         nl = line.lstrip()
-                        if str(num_procs) in nl:
-                            # split out the method name
-                            method, rest = nl.split(str(num_procs),1)
-                            # remove all but one space in between words
-                            newmethod = " ".join(method.split())
-                            nl = newmethod+"    "+str(num_procs)+rest
+                        # if str(num_procs) in nl:
+                        #     # split out the method name
+                        #     method, rest = nl.split(str(num_procs),1)
+                        #     # remove all but one space in between words
+                        #     newmethod = " ".join(method.split())
+                        #     nl = newmethod+"    "+str(num_procs)+rest
                         out.write(nl)
                 out.close()
        
@@ -58,12 +61,25 @@ def timing(EXECDIR, config, clickargs):
                 keep_col.append("Mean (s)")
                 f_out = f_in[keep_col]
         
-                # switch columns for rows and reorder
+                # switch columns for rows
                 f_out.set_index("Region", inplace=True)
                 f_out = f_out.T
-        
+                
+                # switch "Mean (s)"" to number of cores
                 f_out.rename(index={"Mean (s)":str(num_procs)}, inplace=True)
-       
+
+                # reorder the columns to the order of the template
+                if not template_cols_set:
+                    # alphabetise columns
+                    f_out = f_out.reindex(sorted(f_out.columns), axis=1)
+                    # set the template columns from this dataframe
+                    template_cols = [col_name for col_name in f_out.columns]
+                    # indicate that template columns is now set
+                    template_cols_set = True
+
+                # reorder columns to template (redundant for first case)
+                f_out = f_out[template_cols]
+               
                 # write new csv
                 if not os.path.isfile(timeoutfilename):
                     f_out.to_csv(timeoutfilename)
