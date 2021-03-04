@@ -56,7 +56,7 @@ while (<$DATAFILE>) {
     if (/^[ \t]*wgettar/) {
         @tokens=split;
         if (!-e "$DATADIR$tokens[1]") {
-            system("cd $DATADIR; wget -q -nd http://www.earthsystemmodeling.org/download/data/$tokens[1]") == 0
+            system("cd $DATADIR; wget -q -nd http://data.earthsystemmodeling.org/download/data/$tokens[1]") == 0
                 or $fail = 1;
             if ($fail) {system("echo 'wget FAILED :$tokens[1]\n'");}
             else {system("echo 'wget SUCCESS :$tokens[1] ... untar ...\n'");}
