@@ -29,50 +29,60 @@ def timing(EXECDIR, config, clickargs):
 
     timeoutfilename = os.path.join(EXECDIR, "mbmesh_"+testcase+"_timing_profile_results.csv")
 
+    template_cols = 0
+    template_cols_set = False
+    
+    col_names = ["Region", "PETs", "Count", "Mean (s)", "Min (s)", "Min PET", "Max (s)", "Max PET"]
+    mmm_str = "Max (s)"
+    region_str = "Region"
+
     for num_run in range(1,runs+1):
         for num_procs in procs:
             if num_procs <= n:
 
                 resfilename = os.path.join(EXECDIR, str(num_procs)+"-"+str(num_run), "ESMF_Profile.summary")
-                rftmp = resfilename+".tmp"
 
-                out = open(rftmp,"a")
                 with open(resfilename) as f:
                     for line in f:
-                        # remove leading whitespace
-                        nl = line.lstrip()
-                        if str(num_procs) in nl:
-                            # split out the method name
-                            method, rest = nl.split(str(num_procs),1)
-                            # remove all but one space in between words
-                            newmethod = " ".join(method.split())
-                            nl = newmethod+"    "+str(num_procs)+rest
-                        out.write(nl)
-                out.close()
+                        if region_str in line:
+                            col_num = [line.index(substr) for substr in col_names]
        
-                f_in = pd.read_csv(rftmp, sep=r"\s{2,}", index_col=False, engine='python')
-        
+                # df = pd.read_csv(rftmp, sep=r"\s{2,}", index_col=False, engine='python')
+                col_num2 = np.array(col_num[1:]) - np.array(col_num[0:-1])
+                df = pd.read_fwf(resfilename, width=col_num2)
+                                
                 # delete unwanted columns
-                keep_col = []
-                keep_col.append("Region")
-                keep_col.append("Mean (s)")
-                f_out = f_in[keep_col]
+                keep_col = [region_str, mmm_str]
+                df = df[keep_col]
         
-                # switch columns for rows and reorder
-                f_out.set_index("Region", inplace=True)
-                f_out = f_out.T
+                # remove leading whitespace in titles
+                df[region_str] = df[region_str].str.lstrip()
         
-                f_out.rename(index={"Mean (s)":str(num_procs)}, inplace=True)
-       
+                # switch columns for rows
+                df.set_index(region_str, inplace=True)
+                df = df.T
+                
+                # switch mmm_str to number of cores
+                df.rename(index={mmm_str:str(num_procs)}, inplace=True)
+
+                # reorder the columns to the order of the template
+                if not template_cols_set:
+                    # alphabetise columns
+                    df = df.reindex(sorted(df.columns), axis=1)
+                    # set the template columns from this dataframe
+                    template_cols = [col_name for col_name in df.columns]
+                    # indicate that template columns is now set
+                    template_cols_set = True
+
+                # reorder columns to template (redundant for first case)
+                df = df[template_cols]
+                              
                 # write new csv
                 if not os.path.isfile(timeoutfilename):
-                    f_out.to_csv(timeoutfilename)
+                    df.to_csv(timeoutfilename)
                 else:
                     with open(timeoutfilename, 'a') as f:
-                        f_out.to_csv(f, header=False)
-        
-                # remove the temp file
-                os.remove(rftmp)
+                        df.to_csv(f, header=False)
 
     return timeoutfilename
 
@@ -83,7 +93,6 @@ def create_output_file(str, EXECDIR, testcase):
     out = None
     if not os.path.isfile(memoutfilename):
         out = open(memoutfilename,"w")
-        out.write("memory measured in Mb\n")
     else:
         out = open(memoutfilename,"a")
     
