@@ -19,7 +19,6 @@ program MOAB_eval_create
   integer :: numargs
   character(ESMF_MAXPATHLEN) :: deg_res_str
   real(ESMF_KIND_R8) :: deg_res
-  character(ESMF_MAXPATHLEN) :: num_x_str, num_y_str
   integer :: num_x, num_y
   integer :: pdim, sdim
   type(ESMF_CoordSys_Flag) :: coordSys
@@ -44,22 +43,6 @@ program MOAB_eval_create
      write(*,*) "ERROR: MOAB_eval_create-from-desc Should be run with 1 arguments"
      call ESMF_Finalize(endflag=ESMF_END_ABORT)
   endif
-
-#if 0
-  ! Get num_x string
-  call ESMF_UtilGetArg(1, argvalue=num_x_str, rc=localrc)
-  if (localrc /= ESMF_SUCCESS) call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
-  ! Translate to integer
-  read(num_x_str,'(i6)') num_x
-
-  ! Get num_y string
-  call ESMF_UtilGetArg(2, argvalue=num_y_str, rc=localrc)
-  if (localrc /= ESMF_SUCCESS) call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
-  ! Translate to integer
-  read(num_y_str,'(i6)') num_y
-#endif
 
   ! Get deg_res string
   call ESMF_UtilGetArg(1, argvalue=deg_res_str, rc=localrc)
@@ -372,7 +355,7 @@ end subroutine generate_mesh_desc
   endif
 
 ! Write mesh for debugging
-call ESMF_MeshWrite(srcMesh, "mesh"//trim(NM))
+! call ESMF_MeshWrite(srcMesh, "mesh"//trim(NM))
 
 #ifdef profile_meshcreate
   call ESMF_VMLogMemInfo("after "//trim(NM)//" ESMF_MeshCreate()")
