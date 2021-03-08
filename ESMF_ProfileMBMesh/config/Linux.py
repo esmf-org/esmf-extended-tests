@@ -24,7 +24,7 @@ esmf_env = dict(ESMF_OS = "Linux",
 testcase_args = dict(
     create = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1deg.esmf.nc"),
                   GRID2 = os.path.join(ROOTDIR,"data", "ll1deg.esmf.nc")),
-    createfromdesc = dict(GRID1 = "500",
+    createfromdesc = dict(GRID1 = "0.5",
                           GRID2 = " "),
     dual = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll4deg.esmf.nc"),
                 GRID2 = os.path.join(ROOTDIR,"data", "ll4deg.esmf.nc")),
