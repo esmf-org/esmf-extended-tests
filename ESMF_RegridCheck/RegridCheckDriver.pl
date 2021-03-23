@@ -3,7 +3,7 @@
 # $Id$
 #
 # Earth System Modeling Framework
-# Copyright 2002-2020, University Corporation for Atmospheric Research,
+# Copyright 2002-2021, University Corporation for Atmospheric Research,
 # Massachusetts Institute of Technology, Geophysical Fluid Dynamics
 # Laboratory, University of Michigan, National Centers for Environmental
 # Prediction, Los Alamos National Laboratory, Argonne National Laboratory,
@@ -56,7 +56,7 @@ while (<$DATAFILE>) {
     if (/^[ \t]*wgettar/) {
         @tokens=split;
         if (!-e "$DATADIR$tokens[1]") {
-            system("cd $DATADIR; wget -q -nd http://www.earthsystemmodeling.org/download/data/$tokens[1]") == 0
+            system("cd $DATADIR; wget -q -nd http://data.earthsystemmodeling.org/download/data/$tokens[1]") == 0
                 or $fail = 1;
             if ($fail) {system("echo 'wget FAILED :$tokens[1]\n'");}
             else {system("echo 'wget SUCCESS :$tokens[1] ... untar ...\n'");}

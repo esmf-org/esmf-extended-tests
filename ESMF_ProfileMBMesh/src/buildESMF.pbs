@@ -60,6 +60,9 @@ eval ${MODULES}
 if [[ ${TESTCASE} == "create" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_MESHCREATE
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_MESHCREATE
+elif [[ ${TESTCASE} == "createfromdesc" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_MESHCREATE
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_MESHCREATE
 elif [[ ${TESTCASE} == "dual" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_DUALMESH
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_DUALMESH
@@ -72,6 +75,9 @@ elif [[ ${TESTCASE} == "redist" ]]; then
 elif [[ ${TESTCASE} == "regridbilinear" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_REGRID
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_REGRID
+elif [[ ${TESTCASE} == "regridbilinearcorner" ]]; then
+    export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_REGRID
+    export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_REGRID
 elif [[ ${TESTCASE} == "regridconservative" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_REGRID
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_REGRID
@@ -79,7 +85,7 @@ elif [[ ${TESTCASE} == "rendezvous" ]]; then
     export ESMF_CXXCOMPILEOPTS=-DESMF_PROFILE_RENDEZVOUS
     export ESMF_F90COMPILEOPTS=-DESMF_PROFILE_RENDEZVOUS
 else
-  echo 'USAGE: TESTCASE must be set to create, dual, grid2mesh, redist, regridbilinear, regridconservative, or rendezvous'
+  echo 'USAGE: TESTCASE must be set to create, dual, grid2mesh, redist, regridbilinear, regridbilinearcorner, regridconservative, or rendezvous'
   exit 1
 fi
 

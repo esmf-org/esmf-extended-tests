@@ -1,7 +1,7 @@
 import os
 
-RUNDIR="/Users/oehmke/MBMeshPerformanceResults"
-ROOTDIR="/Users/oehmke/sandbox/esmf-extended-tests/ESMF_ProfileMBMesh"
+RUNDIR="/Users/oehmke/ESMF/esmf-extended-tests/ESMF_ProfileMBMesh/RESULTS"
+ROOTDIR="/Users/oehmke/ESMF/esmf-extended-tests/ESMF_ProfileMBMesh"
 SRCDIR=os.path.join(ROOTDIR, "src")
 CFGDIR=os.path.join(ROOTDIR, "config")
 
@@ -24,6 +24,8 @@ esmf_env = dict(ESMF_OS = "Darwin",
 testcase_args = dict(
     create = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1deg.esmf.nc"),
                   GRID2 = os.path.join(ROOTDIR,"data", "ll1deg.esmf.nc")),
+    createfromdesc = dict(GRID1 = "0.5",
+                          GRID2 = " "),
     dual = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll4deg.esmf.nc"),
                 GRID2 = os.path.join(ROOTDIR,"data", "ll4deg.esmf.nc")),
     GRID2mesh = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1deg.scrip.nc"),
@@ -32,6 +34,8 @@ testcase_args = dict(
                   GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
     regridbilinear = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),
                           GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
+    regridbilinearcorner = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),
+                                GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
     regridconservative = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),
                               GRID2 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc")),
     rendezvous = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll2deg.esmf.nc"),

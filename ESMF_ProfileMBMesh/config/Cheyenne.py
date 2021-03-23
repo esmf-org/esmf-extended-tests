@@ -5,7 +5,7 @@ ROOTDIR="/glade/work/rokuingh/sandbox/esmf-extended-tests/ESMF_ProfileMBMesh"
 SRCDIR=os.path.join(ROOTDIR, "src")
 CFGDIR=os.path.join(ROOTDIR, "config")
 
-procs=(36, 72, 144, 288, 576, 1152, 2304, 4608)
+procs=(36, 72, 144, 288, 576, 1152, 2304, 4608, 9216, 18432)
 
 mpirun = "mpiexec_mpt"
 modules = "source /etc/profile.d/modules.sh; module purge; module load ncarenv/1.3 intel/18.0.5 ncarcompilers/0.5.0 mpt/2.19 netcdf/4.7.1;"
@@ -24,15 +24,19 @@ esmf_env = dict(ESMF_OS = "Linux",
 testcase_args = dict(
     create = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e4deg10e7node.esmf.nc"),
                   GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e4deg10e7node.esmf.nc")),
+    createfromdesc = dict(GRID1 = "0.0625",
+                          GRID2 = " "),
     dual = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e0deg10e4node.esmf.nc"),
                 GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e0deg10e4node.esmf.nc")),
     grid2mesh = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e4deg10e7node.scrip.nc"),
                      GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e4deg10e7node.scrip.nc")),
     redist = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc"),
                   GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc")),
-    regridbilinear = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc"),
+    regridbilinear = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e4deg10e7node.esmf.nc"),
                           GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc")),
-    regridconservative = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc"),
+    regridbilinearcorner = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e4deg10e7node.esmf.nc"),
+                                GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc")),
+    regridconservative = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e4deg10e7node.esmf.nc"),
                               GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc")),
     rendezvous = dict(GRID1 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc"),
                       GRID2 = os.path.join(ROOTDIR,"data", "ll1x2e3deg10e6node.esmf.nc"))

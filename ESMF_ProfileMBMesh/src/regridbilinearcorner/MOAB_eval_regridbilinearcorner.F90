@@ -1,14 +1,15 @@
 ! Earth System Modeling Framework
-! Copyright 2002-2021, University Corporation for Atmospheric Research,
+! Copyright 2002-2020, University Corporation for Atmospheric Research,
 ! Massachusetts Institute of Technology, Geophysical Fluid Dynamics
 ! Laboratory, University of Michigan, National Centers for Environmental
 ! Prediction, Los Alamos National Laboratory, Argonne National Laboratory,
 ! NASA Goddard Space Flight Center.
 ! Licensed under the University of Illinois-NCSA License.
 
-! #define profile_meshcreate
+! #define profile_regridstore
+! #define profile_regridrun
 
-program MOAB_eval_create
+program MOAB_eval_regrid
 
   use ESMF
   implicit none
@@ -16,7 +17,7 @@ program MOAB_eval_create
   integer :: localrc
   integer :: localPet, petCount
   type(ESMF_VM) :: vm
-  character(ESMF_MAXPATHLEN) :: file, dstfile
+  character(ESMF_MAXPATHLEN) :: srcfile, dstfile
   integer :: numargs
 
    ! Init ESMF
@@ -33,13 +34,12 @@ program MOAB_eval_create
   endif
 
   ! Get filenames
-  call ESMF_UtilGetArg(1, argvalue=file, rc=localrc)
+  call ESMF_UtilGetArg(1, argvalue=srcfile, rc=localrc)
   if (localrc /= ESMF_SUCCESS) call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
   ! Get filenames
   call ESMF_UtilGetArg(2, argvalue=dstfile, rc=localrc)
   if (localrc /= ESMF_SUCCESS) call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
 
   ! get pet info
   call ESMF_VMGetGlobal(vm, rc=localrc)
@@ -52,7 +52,8 @@ program MOAB_eval_create
   if (localPet .eq. 0) then
      write(*,*)
      write(*,*) "NUMBER OF PROCS = ",petCount
-     write(*,*) "GRID FILE = ",trim(file)
+     write(*,*) "SRC FILE = ",trim(srcfile)
+     write(*,*) "DST FILE = ",trim(dstfile)
   endif
 
   !!!!!!!!!!!!!!! Time NativeMesh !!!!!!!!!!!!
@@ -66,9 +67,9 @@ program MOAB_eval_create
   if (localrc /= ESMF_SUCCESS) call ESMF_Finalize(endflag=ESMF_END_ABORT)
   
   ! Regridding using ESMF native Mesh
-  call profile_mesh_create(.false., file, rc=localrc)
+  call profile_mesh_regrid(.false., srcfile, dstfile, rc=localrc)
    if (localrc /=ESMF_SUCCESS) then
-     write(*,*) "ERROR IN REDIST SUBROUTINE!"
+     write(*,*) "ERROR IN REGRID SUBROUTINE!"
      call ESMF_Finalize(endflag=ESMF_END_ABORT)
   endif
 
@@ -83,9 +84,9 @@ program MOAB_eval_create
   if (localrc /= ESMF_SUCCESS) call ESMF_Finalize(endflag=ESMF_END_ABORT)
   
   ! Regridding using MOAB Mesh
-  call profile_mesh_create(.true., file, rc=localrc)
+  call profile_mesh_regrid(.true., srcfile, dstfile, rc=localrc)
    if (localrc /=ESMF_SUCCESS) then
-     write(*,*) "ERROR IN REDIST SUBROUTINE!"
+     write(*,*) "ERROR IN REGRID SUBROUTINE!"
      call ESMF_Finalize(endflag=ESMF_END_ABORT)
     endif
   
@@ -101,16 +102,20 @@ program MOAB_eval_create
   contains
 
 
- subroutine profile_mesh_create(moab, file, rc)
+ subroutine profile_mesh_regrid(moab, srcfile, dstfile, rc)
   logical, intent(in) :: moab
-  character(*), intent(in) :: file
-  integer, intent(out), optional :: rc
+  character(*), intent(in) :: srcfile
+  character(*), intent(in) :: dstfile
+  integer, intent(out) :: rc
 
   integer :: localrc
 
   character(12) :: NM
   type(ESMF_VM) :: vm
-  type(ESMF_Mesh) :: srcMesh
+  type(ESMF_ArraySpec) :: as
+  type(ESMF_Mesh) :: srcMesh, dstMesh
+  type(ESMF_Field) :: srcField, dstField
+  type(ESMF_RouteHandle) :: rh
 
   ! result code
   integer :: finalrc
@@ -139,26 +144,93 @@ program MOAB_eval_create
     NM = "MBMesh"
   endif
 
-#define profile_meshcreate
-#ifdef profile_meshcreate
-  call ESMF_TraceRegionEnter(trim(NM)//" ESMF_MeshCreate(DefaultDistribution)")
-  call ESMF_VMLogMemInfo("before "//trim(NM)//" ESMF_MeshCreate(DefaultDistribution)")
+
+  srcMesh=ESMF_MeshCreate(filename=srcfile, fileformat=ESMF_FILEFORMAT_ESMFMESH, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=localrc
+    return
+  endif
+
+  dstMesh=ESMF_MeshCreate(filename=dstfile, fileformat=ESMF_FILEFORMAT_ESMFMESH, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=localrc
+    return
+  endif
+
+  call ESMF_ArraySpecSet(as, 1, ESMF_TYPEKIND_R8, rc=rc)
+
+  srcField=ESMF_FieldCreate(srcMesh, as, meshloc=ESMF_MESHLOC_ELEMENT, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=localrc
+    return
+  endif
+
+  dstField=ESMF_FieldCreate(dstMesh, as, meshloc=ESMF_MESHLOC_ELEMENT, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=localrc
+    return
+  endif
+
+#define profile_regridstore
+#ifdef profile_regridstore
+  call ESMF_TraceRegionEnter(trim(NM)//" ESMF_FieldRegridStore()")
+  call ESMF_VMLogMemInfo("before "//trim(NM)//" ESMF_FieldRegridStore()")
 #endif
 
-  srcMesh=ESMF_MeshCreate(filename=file, fileformat=ESMF_FILEFORMAT_ESMFMESH, rc=localrc)
+  call ESMF_FieldRegridStore(srcField, dstField=dstField, routehandle=rh, &
+                             regridmethod=ESMF_REGRIDMETHOD_BILINEAR, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=localrc
+    return
+  endif
+
+#ifdef profile_regridstore
+  call ESMF_VMLogMemInfo("after "//trim(NM)//" ESMF_FieldRegridStore()")
+  call ESMF_TraceRegionExit(trim(NM)//" ESMF_FieldRegridStore()")
+#endif
+
+#define profile_regridrun
+#ifdef profile_regridrun
+  call ESMF_TraceRegionEnter(trim(NM)//" ESMF_FieldRegrid()")
+  call ESMF_VMLogMemInfo("before "//trim(NM)//" ESMF_FieldRegrid()")
+#endif
+
+  call ESMF_FieldRegrid(srcField, dstField, rh, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=localrc
+    return
+  endif
+
+#ifdef profile_regridrun
+  call ESMF_VMLogMemInfo("after "//trim(NM)//" ESMF_FieldRegrid()")
+  call ESMF_TraceRegionExit(trim(NM)//" ESMF_FieldRegrid()")
+#endif
+
+  call ESMF_FieldRegridRelease(rh, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=localrc
+    return
+  endif
+
+  call ESMF_FieldDestroy(srcField, rc=localrc)
   if (localrc /=ESMF_SUCCESS) then
     rc=ESMF_FAILURE
     return
   endif
 
-#ifdef profile_meshcreate
-  call ESMF_VMLogMemInfo("after "//trim(NM)//" ESMF_MeshCreate(DefaultDistribution)")
-  call ESMF_TraceRegionExit(trim(NM)//" ESMF_MeshCreate(DefaultDistribution)")
-#endif
+  call ESMF_FieldDestroy(dstField, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=ESMF_FAILURE
+    return
+  endif
 
-
-  ! Free the meshes
   call ESMF_MeshDestroy(srcMesh, rc=localrc)
+  if (localrc /=ESMF_SUCCESS) then
+    rc=ESMF_FAILURE
+    return
+  endif
+
+  call ESMF_MeshDestroy(dstMesh, rc=localrc)
   if (localrc /=ESMF_SUCCESS) then
     rc=ESMF_FAILURE
     return
@@ -167,7 +239,7 @@ program MOAB_eval_create
 #endif
 ! ESMF_MOAB
 
-end subroutine profile_mesh_create
+end subroutine profile_mesh_regrid
 
-end program MOAB_eval_create
+end program MOAB_eval_regrid
 

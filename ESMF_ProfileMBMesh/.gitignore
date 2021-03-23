@@ -2,6 +2,7 @@ __pycache__
 *.o
 src/old/serial_create/runs
 src/create/MOAB_eval_create
+src/createfromdesc/MOAB_eval_createfromdesc
 src/dual/MOAB_eval_dual
 src/grid2mesh/MOAB_eval_grid2mesh
 src/redist/MOAB_eval_redist
