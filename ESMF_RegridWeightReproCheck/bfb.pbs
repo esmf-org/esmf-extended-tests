@@ -1,0 +1,102 @@
+#!/bin/bash
+#PBS -N bfbrun
+#PBS -A P93300606
+#PBS -l walltime=08:00:00
+#PBS -q economy
+#PBS -j oe
+#PBS -m abe
+#PBS -M ryan.okuinghttons@noaa.gov
+#PBS -l select=1:ncpus=36:mpiprocs=36
+
+# April 1 2021
+# This script will output a file with the BFB changes between the results of ESMF_RegridWeightGenCheck at
+# the ESMF_8_0_0 tag run with ESMF installations from 800 and 810. 
+
+module purge; module load python/3.7.5 ncarenv/1.3 intel/19.0.5 ncarcompilers/0.5.0 mpt/2.21 netcdf/4.7.3
+
+module load nccmp/1.8.2.1
+
+export ESMF_COMPILER=intel
+export ESMF_COMM=mpt
+export BOPT=O
+export ESMF_NETCDF=nc-config
+
+export BFBDIR=${PWD}
+
+
+# build 800
+export DIR800=${BFBDIR}/esmf800
+mkdir ${DIR800}
+cd ${DIR800}
+
+git clone -b ESMF_8_0_0 https://github.com/esmf-org/esmf.git
+export ESMF_DIR=${DIR800}/esmf
+cd ${ESMF_DIR}
+
+make -j36 > make.out 2>&1
+
+export ESMF_INSTALL_PREFIX=${DIR800}/esmfinstall
+export ESMF_INSTALL_LIBDIR=${ESMF_INSTALL_PREFIX}/lib
+
+make install
+
+
+# build 810
+export DIR810=${BFBDIR}/esmf810
+mkdir ${DIR810}
+cd ${DIR810}
+
+git clone -b ESMF_8_1_0 https://github.com/esmf-org/esmf.git
+export ESMF_DIR=${DIR810}/esmf
+cd ${ESMF_DIR}
+
+make -j36 > make.out 2>&1
+
+export ESMF_INSTALL_PREFIX=${DIR810}/esmfinstall
+export ESMF_INSTALL_LIBDIR=${ESMF_INSTALL_PREFIX}/lib
+
+make install
+
+
+# download RWG
+
+cd ${BFBDIR}
+git clone -b ESMF_8_0_0 git@github.com:esmf-org/esmf-extended-tests.git
+# which tag should we use here? 800 or 810 or develop even?
+
+export ESMF_MPIRUN=mpiexec
+export ESMF_NUM_PROCS=36
+
+
+# run RWG with 800
+
+cd ${BFBDIR}/esmf-extended-tests/ESMF_RegridWeightGenCheck
+
+export ESMFMKFILE=${DIR800}/esmfinstall/lib/esmf.mk
+
+make clean
+make run
+
+mkdir ${DIR800}/ncfiles
+cp *.nc ${DIR800}/ncfiles
+
+
+# run RWG with 810
+
+cd ${BFBDIR}/esmf-extended-tests/ESMF_RegridWeightGenCheck
+
+export ESMFMKFILE=${DIR810}/esmfinstall/lib/esmf.mk
+
+make clean
+make run
+
+mkdir ${DIR810}/ncfiles
+cp *.nc ${DIR810}/ncfiles
+
+
+# run nccmp
+cd ${BFBDIR}
+./bfb_comp ${DIR800} ${DIR810} > 810_Cheyenne_BFB800_intel19mpt-O.txt 2>&1 
+
+
+
