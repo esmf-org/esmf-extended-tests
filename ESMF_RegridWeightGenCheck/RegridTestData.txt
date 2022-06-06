@@ -3,7 +3,7 @@
 # Input data for the RegridWeightGenCheck external demo
 
 # total number of test cases
-165
+166
 
 # source_grid : destination_grid : method : options : Mean Rel Error : Max Rel Error : Conservation Error
 
@@ -28,7 +28,7 @@ ll2.5deg_grid.nc : T42_grid.nc      : patch    : -p 4       : 10E-04 : 10E-04 : 
 T42_grid.nc      : ll2.5deg_grid.nc : patch    : -p none -i : 10E-04 : 10E-03 : 10E-16
 T42_grid.nc      : ll2.5deg_grid.nc : bilinear : -p 4       : 10E-04 : 10E-03 : 10E-16
 
-# global to global with file type arguments
+# global to global
 ll1deg_grid.nc : ll2.5deg_grid.nc : bilinear :   : 10E-05 : 10E-04 : 10E-16
 ll1deg_grid.nc : ll2.5deg_grid.nc : patch    :   : 10E-05 : 10E-04 : 10E-16
 ll1deg_grid.nc : ll2.5deg_grid.nc : conserve :   : 10E-04 : 10E-04 : 10E-13
@@ -278,3 +278,7 @@ T42_grid.nc   : mpas_uniform_10242.nc: conserve2nd :   --norm_type fracarea : 10
 ll2.5deg_grid.nc : ll1deg_grid.nc    : patch : -p none --extrap_method neareststod  : 20E-05 : 20E-04 : 10E-16
 ll2.5deg_grid.nc : ll1deg_grid.nc    : patch : -p none --extrap_method nearestidavg --extrap_num_dst_pnts 6 --extrap_dst_exponent 3.0 : 20E-05 : 20E-04 : 10E-16
 ll2.5deg_grid.nc : ll1deg_grid.nc    : patch : -p none --extrap_method creep --extrap_num_levels 2 : 10E-04 : 10E-03 : 10E-16
+
+# Test for --checkFlag
+# We don't have a way to count a failing test as a passing one right now, so this just makes sure --checkFlag doesn't cause a problem.
+ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --checkFlag  : 10E-04 : 10E-04 : 10E-13
