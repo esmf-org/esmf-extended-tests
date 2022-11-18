@@ -1,21 +1,33 @@
-ESMF_HelloWorld                     README
----------------                     ------
+ESMF_HelloWorld_CMake
+=====================
 
 This directory contains code that is based on the ESMF Fortran API.
 
-The application prints "Hello ESMF World" to stdout. The code is accompanied
-by CMakeLists.txt and cmake/FindESMF.cmake files. It builds using the typical
-CMake procedure:
+The application writes ">>> Hello ESMF World <<<" to the ESMF default log (see PET*.ESMF_LogFile's).
 
-mkdir build; cd build
-cmake ..
-make
+The main purpose of this example is to demonstrate the use of CMake for ESMF applications. The code is accompanied by `CMakeLists.txt` and `cmake/FindESMF.cmake` files.
 
-The FindESMF.cmake file depends on environment variable ESMFMKFILE being set
-according to the instructions given in the ESMF User's Guide.
+Notice the dependency of the example on a relatively recent release of CMake: version 3.22. This is specified in file `CMakeLists.txt`. The primary reason for this restictive dependency is that not until version 3.22 was it supported to use the `find_package()` and `set()` functions before `project()`. Hence it was more difficult in the older versions to specified the compilers consistent with those used by ESMF.
 
-NOTE:
-The executable should be run according to the system-specific procedures that
-apply to the execution of binaries. The correct procedure may depend on whether
-the executable was built against an mpiuni- or mpi-based ESMF library
-installation.
+Notice that it is possible to get the desired end result with previous versions of CMake, requiring some re-arranging of the order of functions in `CMakeLists.txt`. However, the more recently supported order of functions leads to a simpler and more intuitive version of `CMakeLists.txt` file shown here.
+
+The code can be built using any of the usual CMake build procedures:
+
+    mkdir build; cd build
+    cmake ..
+    make
+
+or alternatively using the `-S`, `-B`, and `--build` CMake options:
+
+    cmake -S . -B ./build
+    cmake --build ./build
+
+And execute on 8 PETs, e.g. via mpirun:
+
+    mpirun -np 8  ./build/ESMF_HelloWorld
+
+================================================================================
+
+Please contact esmf_support@ucar.edu with any questions or problems.
+
+================================================================================
