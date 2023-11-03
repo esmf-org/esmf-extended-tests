@@ -5,7 +5,7 @@ dir1=$1
 dir2=$2
 
 homedir=`pwd`
-rm failed_list passed_list not_found_list
+rm -f failed_list passed_list not_found_list
 pass=0
 fail=0
 not_found=0
@@ -23,7 +23,6 @@ Files=*.nc
 
                         #nccmp -d   $f  $dir2/$f
                         nccmp -dSqf  $f  $dir2/$f
-
                         if [ "$?" != "0" ]
                         then
                                 echo "$f" >> $homedir/failed_list

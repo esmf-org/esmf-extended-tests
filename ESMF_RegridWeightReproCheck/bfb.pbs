@@ -1,102 +1,99 @@
 #!/bin/bash
 #PBS -N bfbrun
 #PBS -A P93300606
-#PBS -l walltime=08:00:00
-#PBS -q economy
+#PBS -l walltime=04:00:00
+#PBS -q main
 #PBS -j oe
 #PBS -m abe
-#PBS -M ryan.okuinghttons@noaa.gov
-#PBS -l select=1:ncpus=36:mpiprocs=36
+#PBS -M oehmke@ucar.edu
+#PBS -l select=1:ncpus=4:mpiprocs=4
 
-# April 1 2021
-# This script will output a file with the BFB changes between the results of ESMF_RegridWeightGenCheck at
-# the ESMF_8_0_0 tag run with ESMF installations from 800 and 810. 
+# Oct 2021
+# This script will output a file with the BFB changes between the 
+# results of ESMF_RegridWeightGenCheck between BASE_TAG and COMP_TAG
+# This scrip needs to be run after bob_pre_bfb and in the same directory 
+export BASE_TAG=8.5.0
+export COMP_TAG=8.6.0
 
-module purge; module load python/3.7.5 ncarenv/1.3 intel/19.0.5 ncarcompilers/0.5.0 mpt/2.21 netcdf/4.7.3
+# Setup modules with which to build ESMF
+module purge
+module load ncarenv/23.06 craype/2.7.20 cmake/3.26.3
+module load intel/2023.0.0 ncarcompilers/1.0.0 cray-mpich/8.1.25
+module load hdf5/1.12.2 netcdf/4.9.2
 
-module load nccmp/1.8.2.1
+# module for comparison program
+module load nccmp/1.9.0.1
 
+# Set ESMF compiler variables
 export ESMF_COMPILER=intel
-export ESMF_COMM=mpt
+export ESMF_COMM=mpi
 export BOPT=O
+export ESMF_OPTLEVEL=2
 export ESMF_NETCDF=nc-config
+export ESMF_PIO=internal
+export ESMF_CXXCOMPILEOPTS="-fp-model precise"
+export ESMF_F90COMPILEOPTS="-fp-model precise"
 
+# Set working directory
 export BFBDIR=${PWD}
 
+# Set up directory for base
+export BASE_DIR=${BFBDIR}/${BASE_TAG}
+cd ${BASE_DIR}
 
-# build 800
-export DIR800=${BFBDIR}/esmf800
-mkdir ${DIR800}
-cd ${DIR800}
-
-git clone -b ESMF_8_0_0 https://github.com/esmf-org/esmf.git
-export ESMF_DIR=${DIR800}/esmf
+# Build and install base
+export ESMF_DIR=${BASE_DIR}/esmf
 cd ${ESMF_DIR}
 
-make -j36 > make.out 2>&1
+make -j4 > make.out 2>&1
 
-export ESMF_INSTALL_PREFIX=${DIR800}/esmfinstall
+export ESMF_INSTALL_PREFIX=${BASE_DIR}/esmfinstall
 export ESMF_INSTALL_LIBDIR=${ESMF_INSTALL_PREFIX}/lib
 
 make install
 
 
-# build 810
-export DIR810=${BFBDIR}/esmf810
-mkdir ${DIR810}
-cd ${DIR810}
+# Set up directory for comp
+export COMP_DIR=${BFBDIR}/${COMP_TAG}
+cd ${COMP_DIR}
 
-git clone -b ESMF_8_1_0 https://github.com/esmf-org/esmf.git
-export ESMF_DIR=${DIR810}/esmf
+# Build and install comp
+export ESMF_DIR=${COMP_DIR}/esmf
 cd ${ESMF_DIR}
 
-make -j36 > make.out 2>&1
+make -j4 > make.out 2>&1
 
-export ESMF_INSTALL_PREFIX=${DIR810}/esmfinstall
+export ESMF_INSTALL_PREFIX=${COMP_DIR}/esmfinstall
 export ESMF_INSTALL_LIBDIR=${ESMF_INSTALL_PREFIX}/lib
 
 make install
 
 
-# download RWG
-
-cd ${BFBDIR}
-git clone -b ESMF_8_0_0 git@github.com:esmf-org/esmf-extended-tests.git
-# which tag should we use here? 800 or 810 or develop even?
-
+# Setup to run
 export ESMF_MPIRUN=mpiexec
-export ESMF_NUM_PROCS=36
+export ESMF_NUM_PROCS=4
 
 
-# run RWG with 800
-
+# run RWG with BASE_TAG
 cd ${BFBDIR}/esmf-extended-tests/ESMF_RegridWeightGenCheck
-
-export ESMFMKFILE=${DIR800}/esmfinstall/lib/esmf.mk
-
+export ESMFMKFILE=${BASE_DIR}/esmfinstall/lib/esmf.mk
 make clean
 make run
 
-mkdir ${DIR800}/ncfiles
-cp *.nc ${DIR800}/ncfiles
+mkdir ${BASE_DIR}/ncfiles
+cp *.nc ${BASE_DIR}/ncfiles
 
 
-# run RWG with 810
-
+# run RWG with COMP_TAG
 cd ${BFBDIR}/esmf-extended-tests/ESMF_RegridWeightGenCheck
-
-export ESMFMKFILE=${DIR810}/esmfinstall/lib/esmf.mk
-
+export ESMFMKFILE=${COMP_DIR}/esmfinstall/lib/esmf.mk
 make clean
 make run
 
-mkdir ${DIR810}/ncfiles
-cp *.nc ${DIR810}/ncfiles
+mkdir ${COMP_DIR}/ncfiles
+cp *.nc ${COMP_DIR}/ncfiles
 
 
 # run nccmp
 cd ${BFBDIR}
-./bfb_comp ${DIR800} ${DIR810} > 810_Cheyenne_BFB800_intel19mpt-O.txt 2>&1 
-
-
-
+./bfb_comp ${BASE_DIR}/ncfiles ${COMP_DIR}/ncfiles > Derecho_intel_2023.0.0_mpi_O_from_${BASE_TAG}_to_${COMP_TAG}.txt 2>&1 
