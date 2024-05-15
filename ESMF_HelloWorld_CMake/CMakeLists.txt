@@ -33,4 +33,4 @@ project(ESMF_HelloWorld_CMake
 add_executable(ESMF_HelloWorld ESMF_HelloWorld.F90)
 
 # Executable depends on ESMF
-target_link_libraries(ESMF_HelloWorld ESMF)
+target_link_libraries(ESMF_HelloWorld ESMF::ESMF)
