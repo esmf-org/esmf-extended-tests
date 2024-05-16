@@ -5,7 +5,7 @@ This directory contains code that is based on the ESMF C API (commonly referred 
 
 The application writes ">>> Hello ESMC World <<<" to the ESMF default log (see PET*.ESMF_LogFile's).
 
-The main purpose of this example is to demonstrate the use of CMake for ESMC applications. The code is accompanied by `CMakeLists.txt` and `cmake/FindESMF.cmake` files.
+The main purpose of this example is to demonstrate the use of CMake for ESMF applications written in C. The code is accompanied by `CMakeLists.txt` and `cmake/FindESMF.cmake` files.
 
 Notice the dependency of the example on a relatively recent release of CMake: version 3.22. This is specified in file `CMakeLists.txt`. The primary reason for this restictive dependency is that not until version 3.22 was it supported to use the `find_package()` and `set()` functions before `project()`. Hence it was more difficult in the older versions to specified the compilers consistent with those used by ESMF.
 
