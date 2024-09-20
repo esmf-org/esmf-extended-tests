@@ -31,7 +31,9 @@ program ESMF_ReconcileStress
   type(ESMF_State),    allocatable :: stateList(:)
   type(ESMF_CplComp),  allocatable :: connectorList(:)
   real(ESMF_KIND_R8)    :: t0, t1, t2, t3
+  real(ESMF_KIND_R8)    :: petListBoundsRel(2)
   integer               :: numArgs
+  integer,parameter     :: badPet=-1
   
   ! start up
   call ESMF_Initialize(vm=vm, rc=rc)
@@ -104,16 +106,33 @@ program ESMF_ReconcileStress
     line=__LINE__, &
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
+  ! Try to get absolute bounds
   call ESMF_ConfigGetAttribute(configComp, label="petListBounds:", &
-    valueList=petListBounds, rc=rc)
+    valueList=petListBounds, default=badPet, rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
     line=__LINE__, &
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-  if (localPet==0) then
-     write(*,*) "Mediator PetListBounds=",petListBounds
+  ! If we didn't find the absolute bounds, use relative
+  if (petListBounds(1) == badPet) then
+     call ESMF_ConfigGetAttribute(configComp, label="petListBoundsRel:", &
+          valueList=petListBoundsRel, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
+     ! Calculate absolute bounds using relative
+     petListBounds(1)=INT(petListBoundsRel(1)*REAL(petCount-1))
+     petListBounds(2)=INT(petListBoundsRel(2)*REAL(petCount-1))     
   endif
+
+  ! Debug output  
+  !if (localPet==0) then
+  !   write(*,*) "Mediator PetListBounds=",petListBounds
+  !endif
   
   call CreatePetList(mediatorPetList, petListBounds, rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
@@ -148,21 +167,39 @@ program ESMF_ReconcileStress
       line=__LINE__, &
       file=__FILE__)) &
       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
+    ! Try to get absolute bounds
     call ESMF_ConfigGetAttribute(configComp, label="petListBounds:", &
-      valueList=petListBounds, rc=rc)
+         valueList=petListBounds, default=badPet, rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
+         line=__LINE__, &
+         file=__FILE__)) &
+         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+    
+    ! If we didn't find the absolute bounds, use relative
+    if (petListBounds(1) == badPet) then
+       call ESMF_ConfigGetAttribute(configComp, label="petListBoundsRel:", &
+            valueList=petListBoundsRel, rc=rc)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+            line=__LINE__, &
+            file=__FILE__)) &
+            call ESMF_Finalize(endflag=ESMF_END_ABORT)
+       
+       ! Calculate absolute bounds using relative
+       petListBounds(1)=INT(petListBoundsRel(1)*REAL(petCount-1))
+       petListBounds(2)=INT(petListBoundsRel(2)*REAL(petCount-1))    
+    endif
+
     call CreatePetList(petList, petListBounds, rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
       file=__FILE__)) &
       call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-    if (localPet==0) then
-       write(*,*) "Model ",i," PetListBounds=",petListBounds
-    endif
+    ! Debug output
+    !if (localPet==0) then
+    !   write(*,*) "Model ",i," PetListBounds=",petListBounds
+    !endif
     
     call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
       ESMF_LOGMSG_INFO, rc=rc)
