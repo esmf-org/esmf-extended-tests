@@ -9,3 +9,7 @@ with 10 Fields, this file is named stressP000008.config.
 After setting ESMFMKFILE the test can be built with 'make'. The test can be run
 in the default case with 'mpirun -n 8 ESMF_ReconcileStress'. 'make clean' should
 remove any temporary files created during the builds.
+
+You can also optionally specify the config file it uses on the command line.
+E.g. mpirun -np 8 ESMF_ReconcileStress <my_file.config>
+
