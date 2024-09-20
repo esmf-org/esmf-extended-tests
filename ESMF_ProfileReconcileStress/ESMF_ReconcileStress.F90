@@ -31,7 +31,7 @@ program ESMF_ReconcileStress
   type(ESMF_State),    allocatable :: stateList(:)
   type(ESMF_CplComp),  allocatable :: connectorList(:)
   real(ESMF_KIND_R8)    :: t0, t1, t2, t3
-  
+  integer               :: numArgs
   
   ! start up
   call ESMF_Initialize(vm=vm, rc=rc)
@@ -56,7 +56,25 @@ program ESMF_ReconcileStress
     line=__LINE__, &
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  write(configfile,"('stressP',I6.6,'.config')") petCount
+
+  ! Get number of args
+  call ESMF_UtilGetArgC(count=numArgs, rc=rc)
+  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+    line=__LINE__, &
+    file=__FILE__)) &
+    call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
+  ! If a config name is provided, use that, otherwise use the old name
+  if (numArgs == 0) then
+     write(configfile,"('stressP',I6.6,'.config')") petCount
+  else if (numArgs == 1) then
+     call ESMF_UtilGetArg(1, argvalue=configfile, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+  endif
+
   call ESMF_ConfigLoadFile(config, trim(configfile), rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
     line=__LINE__, &
@@ -92,6 +110,11 @@ program ESMF_ReconcileStress
     line=__LINE__, &
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
+  if (localPet==0) then
+     write(*,*) "Mediator PetListBounds=",petListBounds
+  endif
+  
   call CreatePetList(mediatorPetList, petListBounds, rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
     line=__LINE__, &
@@ -136,6 +159,11 @@ program ESMF_ReconcileStress
       line=__LINE__, &
       file=__FILE__)) &
       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+
+    if (localPet==0) then
+       write(*,*) "Model ",i," PetListBounds=",petListBounds
+    endif
+    
     call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
       ESMF_LOGMSG_INFO, rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
