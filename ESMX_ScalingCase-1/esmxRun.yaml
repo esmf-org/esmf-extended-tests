@@ -1,0 +1,43 @@
+ESMX:
+
+  App:
+    globalResourceControl:  true
+    logKindFlag:            ESMF_LOGKIND_Multi
+    logAppendFlag:          false
+    logFlush:               true
+    startTime:              2012-10-24T18:00:00
+    stopTime:               2012-10-24T19:00:00
+
+    ESMF_RUNTIME_PROFILE:         ON
+    ESMF_RUNTIME_PROFILE_OUTPUT:  SUMMARY
+
+  Driver:
+    componentList:          [prod, cons]
+    attributes:
+      Verbosity: low
+      Profiling: high
+    logSystem:              true
+    runSequence: |
+      @*
+        prod -> cons
+        prod
+        cons
+      @
+
+prod:
+  model:            ProdComp
+  gridCount:        2
+  localGridSizes:   [10, 20]
+  fieldsPerGrid:    100
+  meshCount:        0
+  localMeshSize:    0
+  fieldsPerMesh:    0
+
+cons:
+  model:            ProdComp
+  gridCount:        0
+  localGridSizes:   [0]
+  fieldsPerGrid:    0
+  meshCount:        0
+  localMeshSize:    0
+  fieldsPerMesh:    0
