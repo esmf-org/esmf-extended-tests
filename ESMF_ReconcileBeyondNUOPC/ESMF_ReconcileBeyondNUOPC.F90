@@ -21,7 +21,7 @@ program ESMF_ReconcileStress
   integer               :: i, petCount, localPet, compCount, petListBounds(2)
   type(ESMF_GridComp), allocatable :: compList(:)  
   integer, allocatable  :: petList(:)
-  character(40)         :: configfile, label
+  character(ESMF_MAXSTR) :: configfile, label
   type(ESMF_VM)         :: vm
   type(ESMF_Config)     :: config, configComp
   type(ESMF_State)      :: state
@@ -102,11 +102,6 @@ program ESMF_ReconcileStress
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-  ! Debug
-  if (localPet==0) then
-     write(*,*) "compCount=",compCount
-  endif
-
   
   ! Create components
   allocate(compList(compCount))
@@ -151,7 +146,7 @@ program ESMF_ReconcileStress
 
     ! Debug output
     if (localPet==0) then
-       write(*,*) "Model ",i," PetListBounds=",petListBounds
+       write(*,*) "Comp ",i," PetListBounds=",petListBounds
     endif
     
     call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
@@ -224,10 +219,9 @@ program ESMF_ReconcileStress
 
   ! Output time
   if (localPet == 0) then
-     write(*,*) "Reconcile time=",endTime-begTime
+     write(*,*) "For case ",trim(configfile)," the reconcile time =",endTime-begTime
   endif
   
-
   ! destroy the models and connectors
   do i=1, compCount
     call ESMF_GridCompDestroy(compList(i), rc=rc)
