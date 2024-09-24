@@ -44,11 +44,11 @@ include $(ESMFMKFILE)
 
 # -----------------------------------------------------------------------------
 
-ESMF_ReconcileNonNUOPC: ESMF_ReconcileNonNUOPC.o comp.o
+ESMF_ReconcileBeyondNUOPC: ESMF_ReconcileBeyondNUOPC.o comp.o
 	$(ESMF_F90LINKER) $(ESMF_F90LINKOPTS) $(ESMF_F90LINKPATHS) $(ESMF_F90LINKRPATHS) -o $@ $^ $(ESMF_F90ESMFLINKLIBS)
 
 # module dependencies:
-ESMF_ReconcileNonNUOPC.o: comp.o
+ESMF_ReconcileBeyondNUOPC.o: comp.o
 #ESMF_ReconcileStress.o: mediator.o model.o connector.o
 
 # -----------------------------------------------------------------------------
@@ -57,7 +57,7 @@ ESMF_ReconcileNonNUOPC.o: comp.o
 dust:
 	rm -f PET*.ESMF_LogFile *.nc *.stdout
 clean:
-	rm -f ESMF_ReconcileNonNUOPC *.o *.mod
+	rm -f ESMF_ReconcileBeyondNUOPC *.o *.mod
 distclean: dust clean
 
 info:
