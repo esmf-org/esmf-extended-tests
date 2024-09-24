@@ -227,224 +227,29 @@ program ESMF_ReconcileStress
      write(*,*) "Reconcile time=",endTime-begTime
   endif
   
-#if 0      
-    call ESMF_LogWrite("Creating 'Connector-"//trim(label)//"' component.", &
-      ESMF_LOGMSG_INFO, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    call MergePetLists(connectorPetList, mediatorPetList, petList, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    connectorList(i) = ESMF_CplCompCreate(name="Connector-"//trim(label), &
-      petList=connectorPetList, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-      
-    deallocate(petList, connectorPetList)
-  enddo
-  
-  ! call the mediator SetServices and create the mediator state
-  call ESMF_LogWrite("Calling 'mediator' SetServices.", ESMF_LOGMSG_INFO, rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  call ESMF_GridCompSetServices(mediatorgc, userRoutine=medSS, userRc=urc, rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  medState = ESMF_StateCreate(name="medState", rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  
-  ! call each model SetServices, create each model State, and call connector SS
-  allocate(stateList(modelCount))
-  do i=1, modelCount
-    write(label,"('model-',I2.2)") i
-    call ESMF_LogWrite("Calling '"//trim(label)//"' SetServices.", &
-      ESMF_LOGMSG_INFO, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    call ESMF_GridCompSetServices(modelList(i), userRoutine=modSS, userRc=urc, &
-      rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    stateList(i) = ESMF_StateCreate(name=trim(label)//"State", rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    call ESMF_LogWrite("Calling 'Connector-"//trim(label)//"' SetServices.", &
-      ESMF_LOGMSG_INFO, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    call ESMF_CplCompSetServices(connectorList(i), userRoutine=connectorSS, &
-      userRc=urc, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  enddo
-  
-  ! Mediator initialize phase=1 
-  call ESMF_LogWrite("Calling 'mediator' Init1.", ESMF_LOGMSG_INFO, rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  call ESMF_GridCompInitialize(mediatorgc, phase=1, importState=medState, &
-    userRc=urc, rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  
-  ! Loop over all the Connectors from models to mediator - calls Reconcile()
-  call ESMF_VMBarrier(vm, rc=rc)
-  call ESMF_VMLogMemInfo(prefix="before Reconcile", rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  call ESMF_TraceRegionEnter("Reconcile", rc=rc)
-  call ESMF_VMWTime(t0, rc=rc)
-  do i=1, modelCount
-#if 0
-    write(label,"('model-',I2.2)") i
-    call ESMF_LogWrite("Calling 'Connector-"//trim(label)//"' Init.", &
-      ESMF_LOGMSG_INFO, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-#endif
-    call ESMF_CplCompInitialize(connectorList(i), importState=stateList(i), &
-      exportState=medState, userRc=urc, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  enddo
-  call ESMF_VMBarrier(vm, rc=rc)
-  call ESMF_VMWTime(t1, rc=rc)
-  call ESMF_TraceRegionExit("Reconcile", rc=rc)
-  call ESMF_VMLogMemInfo(prefix="after Reconcile", rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-#if 1
-  ! Loop over all the Connectors from models to mediator - calls Re-Reconcile()
-  call ESMF_VMBarrier(vm, rc=rc)
-  call ESMF_VMLogMemInfo(prefix="before ReReconcile", rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  call ESMF_TraceRegionEnter("ReReconcile", rc=rc)
-  call ESMF_VMWTime(t2, rc=rc)
-  do i=1, modelCount
-#if 0
-    write(label,"('model-',I2.2)") i
-    call ESMF_LogWrite("Calling 'Connector-"//trim(label)//"' Init.", &
-      ESMF_LOGMSG_INFO, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-#endif
-    call ESMF_CplCompInitialize(connectorList(i), importState=stateList(i), &
-      exportState=medState, userRc=urc, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  enddo
-  call ESMF_VMBarrier(vm, rc=rc)
-  call ESMF_VMWTime(t3, rc=rc)
-  call ESMF_TraceRegionExit("ReReconcile", rc=rc)
-  call ESMF_VMLogMemInfo(prefix="after ReReconcile", rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
-#if 0
-  if (localPet==0) then
-    write(unit,*) t1-t0, t3-t2
-    close(unit)
-#endif
-
- write(*,*) "Reconcile time=",t1-t0
-#endif
 
   ! destroy the models and connectors
-  do i=1, modelCount
-    call ESMF_GridCompDestroy(modelList(i), rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    call ESMF_CplCompDestroy(connectorList(i), rc=rc)
+  do i=1, compCount
+    call ESMF_GridCompDestroy(compList(i), rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
       file=__FILE__)) &
       call ESMF_Finalize(endflag=ESMF_END_ABORT)
   enddo
 
-  ! destroy the mediator
-  call ESMF_GridCompDestroy(mediatorgc, rc=rc)
+  ! Destroy the State
+  call ESMF_StateDestroy(state, rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
     line=__LINE__, &
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
   
   ! final wrap up
-  call ESMF_LogWrite("ESMF_ReconcileStress FINISHED", ESMF_LOGMSG_INFO, rc=rc)
+  call ESMF_LogWrite("ESMF_ReconcileNonNUOPC FINISHED", ESMF_LOGMSG_INFO, rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
     line=__LINE__, &
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
-#endif
   
   call ESMF_Finalize(rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &

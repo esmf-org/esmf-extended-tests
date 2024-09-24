@@ -1,15 +1,44 @@
-ESMF ReconcileStress test
+ESMF Reconcile Non-NUOPC test
 
 The test is designed to run a variety of test cases to stress the ESMF_StateReconcile
-algorithm. There is a tar file called Cheyenne-Run001.tgz included with the source
-that contains a variety of configurations for different Field and processor counts.
-There is also a single configuration file to run the default case on 8 processors
-with 10 Fields, this file is named stressP000008.config.
+algorithm. It's set up to allow cases beyond those allowed by NUOPC to allow for
+more general testing. 
 
-After setting ESMFMKFILE the test can be built with 'make'. The test can be run
-in the default case with 'mpirun -n 8 ESMF_ReconcileStress'. 'make clean' should
+After setting ESMFMKFILE the test can be built with 'make'.  Doing 'make clean' should
 remove any temporary files created during the builds.
 
-You can also optionally specify the config file it uses on the command line.
-E.g. mpirun -np 8 ESMF_ReconcileStress <my_file.config>
+You run the test by doing the following:
+mpirun -np 8 ./ESMF_ReconcileNonNUOPC test.config
+where test.config is a config file specifying the case.
+
+
+The following is an example of the config file format: 
+
+compCount:  2  # Number of components
+
+# List of components from 1 to the number
+<comp-01:   
+  petListBounds: 0 3   # Each component should have a petListBound here they are absolute
+  stateMembers: fields-A  # List of the members of the State being added in this component
+  <fields-A:   # fields-A means that this is a list of Fields with name A, the names have to be unique across all the components
+    count: 10  # number of fields build with this name
+    typekind: R8  # type of the field
+    geom: grid-A  # This set of fields will be built on a Grid
+  :fields-A>  
+:comp-01>
+
+<comp-02:
+  petListBoundsRel: 0.3 1.0   # Here we see relative Pet list bounds that will change with the petCount
+  stateMembers: fields-B fields-C
+  <fields-B:
+    count: 20
+    typekind: R8
+    geom: mesh-B # This set of fields will be built on a Mesh
+  :fields-B>
+  <fields-C:
+    count: 5
+    typekind: I4
+    geom: grid-C
+  :fields-C>
+:comp-02>
 

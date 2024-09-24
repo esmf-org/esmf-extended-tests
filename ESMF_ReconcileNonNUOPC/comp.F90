@@ -15,7 +15,6 @@ module Comp
   
   private
  
-  type(ESMF_Container)  :: fieldListContainer
   type FieldList
     type(ESMF_Field), pointer :: fieldList(:)
   end type
@@ -23,12 +22,10 @@ module Comp
     type(FieldList), pointer :: wrap
   end type
   
-  type(ESMF_Container)  :: gridContainer
   type GridWrap
     type(ESMF_Grid), pointer :: wrap
   end type
 
-  type(ESMF_Container)  :: meshContainer
   type MeshWrap
     type(ESMF_Mesh), pointer :: wrap
   end type
@@ -61,18 +58,16 @@ module Comp
     type(ESMF_State)      :: importState, exportState
     type(ESMF_Clock)      :: clock
     integer, intent(out)  :: rc
+   
+    type(ESMF_Config)     :: config
+    type(ESMF_Container)  :: fieldListContainer
+    type(ESMF_Container)  :: gridContainer
+    type(ESMF_Container)  :: meshContainer
     
-    type(ESMF_Config)           :: config
-    
+     
     rc = ESMF_SUCCESS
 
-    call ESMF_GridCompGet(mediator, config=config, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      return  ! bail out
-    
-    ! set up the auxiliary lookup containers
+    ! Create containers to track already created objects
     fieldListContainer = ESMF_ContainerCreate(rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
@@ -87,10 +82,17 @@ module Comp
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
       file=__FILE__)) &
+      return  ! bail out    
+    
+    call ESMF_GridCompGet(mediator, config=config, rc=rc)
+    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+      line=__LINE__, &
+      file=__FILE__)) &
       return  ! bail out
-
+    
     ! ingest the Config file, and populate the importState
-    call AddStateMembers(importState, config, label="stateMembers:", rc=rc)
+    call AddStateMembers(importState, config, "stateMembers:", &
+         fieldListContainer, gridContainer, meshContainer, rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
       file=__FILE__)) &
@@ -100,10 +102,14 @@ module Comp
   
   !-----------------------------------------------------------------------------
  
-  recursive subroutine AddStateMembers(state, config, label, rc)
+  recursive subroutine AddStateMembers(state, config, label, &
+             fieldListContainer, gridContainer, meshContainer, rc)
     type(ESMF_State)      :: state
     type(ESMF_Config)     :: config
     character(*)          :: label
+    type(ESMF_Container)  :: fieldListContainer
+    type(ESMF_Container)  :: gridContainer
+    type(ESMF_Container)  :: meshContainer
     integer, intent(out)  :: rc
  
     integer                     :: count, i
@@ -111,7 +117,7 @@ module Comp
     character(ESMF_MAXSTR), pointer :: tokenList(:)
 
     rc = ESMF_SUCCESS
-
+    
     ! read state members
     count = ESMF_ConfigGetLen(config, label=trim(label), rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
@@ -142,13 +148,15 @@ module Comp
         return  ! bail out
       endif
       if (trim(tokenList(1))=="fields") then
-        call AddFields(state, config, stateMembers(i), rc=rc)
+         call AddFields(state, config, stateMembers(i), &
+              fieldListContainer, gridContainer, meshContainer, rc=rc)
         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
           return  ! bail out
       else if (trim(tokenList(1))=="nest") then
-        call AddNest(state, config, stateMembers(i), rc=rc)
+         call AddNest(state, config, stateMembers(i), &
+              fieldListContainer, gridContainer, meshContainer, rc=rc)
         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
@@ -166,10 +174,14 @@ module Comp
  
   !-----------------------------------------------------------------------------
 
-  recursive subroutine AddNest(state, config, label, rc)
+  recursive subroutine AddNest(state, config, label, &
+      fieldListContainer, gridContainer, meshContainer, rc)
     type(ESMF_State), intent(inout) :: state
     type(ESMF_Config),intent(in)    :: config
     character(*),     intent(in)    :: label
+    type(ESMF_Container)  :: fieldListContainer
+    type(ESMF_Container)  :: gridContainer
+    type(ESMF_Container)  :: meshContainer
     integer,          intent(out)   :: rc
     
     type(ESMF_State)            :: nestedState
@@ -197,7 +209,8 @@ module Comp
       call ESMF_Finalize(endflag=ESMF_END_ABORT)
     
     ! recursively populate the state
-    call AddStateMembers(nestedState, config, label=trim(label)//":", rc=rc)
+    call AddStateMembers(nestedState, config, trim(label)//":", &
+         fieldListContainer, gridContainer, meshContainer, rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
       file=__FILE__)) &
@@ -207,10 +220,14 @@ module Comp
 
   !-----------------------------------------------------------------------------
  
-  recursive subroutine AddFields(state, config, label, rc)
+  recursive subroutine AddFields(state, config, label, &
+       fieldListContainer, gridContainer, meshContainer, rc)
     type(ESMF_State), intent(inout) :: state
     type(ESMF_Config),intent(in)    :: config
     character(*),     intent(in)    :: label
+    type(ESMF_Container)  :: fieldListContainer
+    type(ESMF_Container)  :: gridContainer
+    type(ESMF_Container)  :: meshContainer
     integer,          intent(out)   :: rc
     
     type(ESMF_Config) :: configFields
@@ -309,7 +326,7 @@ module Comp
         return  ! bail out
       endif
       if (trim(tokenList(1))=="grid") then
-        grid = CreateGrid(trim(geomS), rc=rc)
+        grid = CreateGrid(trim(geomS), gridContainer, rc=rc)
         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
@@ -325,7 +342,7 @@ module Comp
             return  ! bail out
         enddo
       else if (trim(tokenList(1))=="mesh") then
-        mesh = CreateMesh(trim(geomS), rc=rc)
+        mesh = CreateMesh(trim(geomS), meshContainer, rc=rc)
         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
@@ -366,9 +383,10 @@ module Comp
 
   !-----------------------------------------------------------------------------
   
-  function CreateGrid(gridName, rc)
+  function CreateGrid(gridName, gridContainer, rc)
     type(ESMF_Grid)           :: CreateGrid
     character(*), intent(in)  :: gridName
+    type(ESMF_Container)  :: gridContainer
     integer,      intent(out) :: rc
     
     type(ESMF_Logical)  :: isPres
@@ -432,8 +450,9 @@ module Comp
   
   !-----------------------------------------------------------------------------
   
-  function CreateMesh(meshName, rc)
+  function CreateMesh(meshName, meshContainer, rc)
     type(ESMF_Mesh)           :: CreateMesh
+    type(ESMF_Container)  :: meshContainer
     character(*), intent(in)  :: meshName
     integer,      intent(out) :: rc
     
