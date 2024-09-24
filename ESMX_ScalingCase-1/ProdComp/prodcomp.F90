@@ -132,6 +132,7 @@ module ProdComp
     integer                 :: i, fld, gem
     integer                 :: fieldsPerGrid, fieldsPerMesh
     character(40), allocatable  :: fieldList(:)
+    type(ESMF_VMId)         :: vmId
 
     rc = ESMF_SUCCESS
 
@@ -150,6 +151,18 @@ module ProdComp
       line=__LINE__, &
       file=__FILE__)) &
       return  ! bail out
+
+  call ESMF_VMGetCurrentID(vmId, rc=rc)
+  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+    line=__LINE__, &
+    file=__FILE__)) &
+    return  ! bail out
+  call ESMF_VMIdLog(vmId, prefix=trim(compLabel)//" Advance(): ", rc=rc)
+  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+    line=__LINE__, &
+    file=__FILE__)) &
+    return  ! bail out
+
 
     ! access ESMX YAML format info through hconfig
     call ESMF_GridCompGet(model, hconfig=hconfig, rc=rc)

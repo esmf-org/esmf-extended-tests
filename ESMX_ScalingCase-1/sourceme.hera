@@ -1,0 +1,9 @@
+module load gnu/13.2.0 cmake/3.28.1
+module load intel/2023.2.0 impi/2023.2.0
+module load netcdf/4.7.0
+
+setenv I_MPI_CXX icpx
+setenv I_MPI_CC icx
+
+setenv ESMFMKFILE /scratch2/BMC/esmf/Gerhard.Theurich/StateReconcileWork/esmf/lib/libO/Linux.intel.64.intelmpi.default/esmf.mk
+
