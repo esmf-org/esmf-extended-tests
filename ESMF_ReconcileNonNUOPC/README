@@ -1,0 +1,15 @@
+ESMF ReconcileStress test
+
+The test is designed to run a variety of test cases to stress the ESMF_StateReconcile
+algorithm. There is a tar file called Cheyenne-Run001.tgz included with the source
+that contains a variety of configurations for different Field and processor counts.
+There is also a single configuration file to run the default case on 8 processors
+with 10 Fields, this file is named stressP000008.config.
+
+After setting ESMFMKFILE the test can be built with 'make'. The test can be run
+in the default case with 'mpirun -n 8 ESMF_ReconcileStress'. 'make clean' should
+remove any temporary files created during the builds.
+
+You can also optionally specify the config file it uses on the command line.
+E.g. mpirun -np 8 ESMF_ReconcileStress <my_file.config>
+
