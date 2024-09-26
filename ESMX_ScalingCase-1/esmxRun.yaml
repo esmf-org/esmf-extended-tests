@@ -26,12 +26,13 @@ ESMX:
 
 prod:
   model:            ProdComp
+  petList:          [2,3]
   gridCount:        10
   localGridSizes:   [10, 20]
-  fieldsPerGrid:    100
-  meshCount:        0
-  localMeshSize:    0
-  fieldsPerMesh:    0
+  fieldsPerGrid:    10
+  meshCount:        10
+  localMeshSize:    100
+  fieldsPerMesh:    10
 
 cons:
   model:            ProdComp

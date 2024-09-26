@@ -260,7 +260,7 @@ module ProdComp
     integer                 :: i, fld, gem
     integer                 :: fieldsPerGrid, fieldsPerMesh
     integer, allocatable    :: localGridSizes(:), globalGridSizes(:)
-    integer                 :: localMeshSize
+    integer                 :: localMeshSize, globalMeshSize
     character(40)           :: fieldName, gridName, meshName
     integer                 :: petCount
     type(ESMF_Field)        :: field
@@ -339,6 +339,7 @@ module ProdComp
       line=__LINE__, &
       file=__FILE__)) &
       return  ! bail out
+    globalMeshSize = localMeshSize * petCount
 
     ! construct fields and realize
     fld = 1
@@ -369,7 +370,18 @@ module ProdComp
     do gem=1, meshCount
       ! create mash
       write(meshName, '("m",I3.3)') gem
-      mesh = ESMF_MeshCreate(name=meshName, grid=grid, rc=rc) !todo: not use grid
+      grid = ESMF_GridCreateNoPeriDimUfrm(name="grid-"//meshName, &
+        maxIndex=[globalMeshSize,1], &
+        minCornerCoord=(/0._ESMF_KIND_R8, 0._ESMF_KIND_R8/), &
+        maxCornerCoord=(/100._ESMF_KIND_R8, 1._ESMF_KIND_R8/), &
+        coordSys=ESMF_COORDSYS_CART, &
+        staggerLocList=(/ESMF_STAGGERLOC_CENTER, ESMF_STAGGERLOC_CORNER/), &
+        rc=rc)
+      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+        line=__LINE__, &
+        file=__FILE__)) &
+        return  ! bail out
+      mesh = ESMF_MeshCreate(name=meshName, grid=grid, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
