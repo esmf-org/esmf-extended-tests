@@ -52,6 +52,6 @@ info:
 	@echo ==================================================================
 
 run:
-	$(ESMF_INTERNAL_MPIRUN) -np $(NP) ./$(EXE)
+	$(ESMF_INTERNAL_MPIRUN) -np $(NP) ./$(EXE) $(CONF)
 run-mpiprof:
-	$(ESMF_INTERNAL_MPIRUN) -np $(NP) $(ESMF_LIBSDIR)/preload.sh ./$(EXE)
+	$(ESMF_INTERNAL_MPIRUN) -np $(NP) $(ESMF_LIBSDIR)/preload.sh ./$(EXE) $(CONF)

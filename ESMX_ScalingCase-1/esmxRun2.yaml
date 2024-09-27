@@ -12,14 +12,15 @@ ESMX:
     ESMF_RUNTIME_PROFILE_OUTPUT:  SUMMARY
 
   Driver:
-    componentList:          [prod, cons]
+    componentList:          [prod, cons1, cons2]
     attributes:
       Verbosity: low
       Profiling: high
     logSystem:              false
     runSequence: |
       @*
-        prod -> cons
+        prod -> cons1
+        prod -> cons2
       @
 
 prod:
@@ -32,9 +33,19 @@ prod:
   localMeshSize:    100
   fieldsPerMesh:    10
 
-cons:
+cons1:
   model:            ProdComp
   petList:          [0,1]
+  gridCount:        0
+  localGridSizes:   [0]
+  fieldsPerGrid:    0
+  meshCount:        0
+  localMeshSize:    0
+  fieldsPerMesh:    0
+
+cons2:
+  model:            ProdComp
+#  petList:          [0,1]
   gridCount:        0
   localGridSizes:   [0]
   fieldsPerGrid:    0
