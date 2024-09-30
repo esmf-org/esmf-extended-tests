@@ -14,7 +14,9 @@ module Comp
   implicit none
   
   private
- 
+
+#define COMP_DEBUG_OUTPUT 0
+  
   type FieldList
     type(ESMF_Field), pointer :: fieldList(:)
   end type
@@ -251,6 +253,7 @@ module Comp
       return  ! bail out
     
     if (isPres==ESMF_TRUE) then
+#if COMP_DEBUG_OUTPUT
       ! query the fieldList from the container, and add it to the state
       call ESMF_LogWrite("Query fieldList '"//trim(label)//"' from lookup.", &
         ESMF_LOGMSG_INFO, rc=rc)
@@ -258,19 +261,22 @@ module Comp
         line=__LINE__, &
         file=__FILE__)) &
         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+#endif      
       call ESMF_ContainerGetUDT(fieldListContainer, trim(label), flW, rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         return  ! bail out
     else
-      ! must create a new fieldList and add to the state
+#if COMP_DEBUG_OUTPUT
+       ! must create a new fieldList and add to the state
       call ESMF_LogWrite("Create fieldList '"//trim(label)//"' from scratch.", &
         ESMF_LOGMSG_INFO, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+#endif
       allocate(flW%wrap)
       configFields = ESMF_ConfigCreate(config, openlabel="<"//trim(label)//":", &
         closelabel=":"//trim(label)//">", rc=rc)
@@ -403,28 +409,31 @@ module Comp
       return  ! bail out
     
     if (isPres==ESMF_TRUE) then
-      ! query the grid from the container
+       ! query the grid from the container
+#if COMP_DEBUG_OUTPUT       
       call ESMF_LogWrite("Query grid '"//trim(gridName)//"' from lookup.", &
         ESMF_LOGMSG_INFO, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+#endif
       call ESMF_ContainerGetUDT(gridContainer, trim(gridName), gW, rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         return  ! bail out
     else
-      ! must create a new fieldList and add to the state
+       ! must create a new fieldList and add to the state
+#if COMP_DEBUG_OUTPUT       
       call ESMF_LogWrite("Create grid '"//trim(gridName)//"' from scratch.", &
         ESMF_LOGMSG_INFO, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+#endif      
       allocate(gW%wrap)
-
       gW%wrap = ESMF_GridCreateNoPeriDimUfrm(maxIndex=(/100, 100/), &
         minCornerCoord=(/0._ESMF_KIND_R8,  -90._ESMF_KIND_R8/), &
         maxCornerCoord=(/360._ESMF_KIND_R8, 90._ESMF_KIND_R8/), &
@@ -470,26 +479,30 @@ module Comp
       return  ! bail out
     
     if (isPres==ESMF_TRUE) then
-      ! query the mesh from the container
+       ! query the mesh from the container
+#if COMP_DEBUG_OUTPUT
       call ESMF_LogWrite("Query mesh '"//trim(meshName)//"' from lookup.", &
         ESMF_LOGMSG_INFO, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+#endif
       call ESMF_ContainerGetUDT(meshContainer, trim(meshName), mW, rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         return  ! bail out
     else
-      ! must create a new fieldList and add to the state
+       ! must create a new fieldList and add to the state
+#if COMP_DEBUG_OUTPUT
       call ESMF_LogWrite("Create mesh '"//trim(meshName)//"' from scratch.", &
         ESMF_LOGMSG_INFO, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
         file=__FILE__)) &
         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+#endif
       allocate(mW%wrap)
       mW%wrap = ESMF_MeshCreateCubedSphere(tileSize=50, &
         nx=10, ny=10, rc=rc)

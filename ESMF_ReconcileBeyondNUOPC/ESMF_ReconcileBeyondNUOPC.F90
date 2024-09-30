@@ -25,10 +25,14 @@ program ESMF_ReconcileStress
   type(ESMF_VM)         :: vm
   type(ESMF_Config)     :: config, configComp
   type(ESMF_State)      :: state
-  real(ESMF_KIND_R8)    :: begTime, endTime
+  real(ESMF_KIND_R8)    :: begTime, endTime, totTime
+  real(ESMF_KIND_R8)    :: localTime(1), globalSumTime(1)
+  real(ESMF_KIND_R8)    :: globalAvgTime
   real(ESMF_KIND_R8)    :: petListBoundsRel(2)
   integer               :: numArgs
   integer,parameter     :: badPet=-1
+  integer,parameter     :: numTests=5
+  integer :: t
   
   ! start up
   call ESMF_Initialize(vm=vm, rc=rc)
@@ -47,28 +51,20 @@ program ESMF_ReconcileStress
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-
-  ! Create State
-  state = ESMF_StateCreate(name="State", rc=rc)
+  ! config
+  config = ESMF_ConfigCreate(rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
        line=__LINE__, &
        file=__FILE__)) &
        call ESMF_Finalize(endflag=ESMF_END_ABORT)
   
-  ! config
-  config = ESMF_ConfigCreate(rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
   ! Get number of args
   call ESMF_UtilGetArgC(count=numArgs, rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
+       line=__LINE__, &
+       file=__FILE__)) &
+       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+  
   ! If a config name is provided, use that, otherwise use the old name
   if (numArgs == 1) then
      call ESMF_UtilGetArg(1, argvalue=configfile, rc=rc)
@@ -86,143 +82,186 @@ program ESMF_ReconcileStress
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)
   endif
-
+  
   ! Get the config file
   call ESMF_ConfigLoadFile(config, trim(configfile), rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-        
+       line=__LINE__, &
+       file=__FILE__)) &
+       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+  
   ! Get the number of components
   call ESMF_ConfigGetAttribute(config, label="compCount:", value=compCount, &
-    rc=rc)
+       rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
+       line=__LINE__, &
+       file=__FILE__)) &
+       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+  
   
   ! Create components
   allocate(compList(compCount))
   do i=1, compCount
+     
+     ! Get component bounds
+     write(label,"('comp-',I2.2)") i
+     configComp = ESMF_ConfigCreate(config, openlabel="<"//trim(label)//":", &
+          closelabel=":"//trim(label)//">", rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     
+     ! Try to get absolute bounds
+     call ESMF_ConfigGetAttribute(configComp, label="petListBounds:", &
+          valueList=petListBounds, default=badPet, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     
+     ! If we didn't find the absolute bounds, use relative
+     if (petListBounds(1) == badPet) then
+        call ESMF_ConfigGetAttribute(configComp, label="petListBoundsRel:", &
+             valueList=petListBoundsRel, rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+        
+        ! Calculate absolute bounds using relative
+        petListBounds(1)=INT(petListBoundsRel(1)*REAL(petCount-1))
+        petListBounds(2)=INT(petListBoundsRel(2)*REAL(petCount-1))    
+     endif
+        
+     call CreatePetList(petList, petListBounds, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     
+     ! Debug output
+     !if (localPet==0) then
+     !   write(*,*) "Comp ",i," PetListBounds=",petListBounds
+     !endif
+     
+     call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
+          ESMF_LOGMSG_INFO, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     compList(i) = ESMF_GridCompCreate(name=trim(label), config=configComp, &
+          petList=petList, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     
+     ! Get rid of PetList
+     deallocate(petList)
 
-    ! Get component bounds
-    write(label,"('comp-',I2.2)") i
-    configComp = ESMF_ConfigCreate(config, openlabel="<"//trim(label)//":", &
-      closelabel=":"//trim(label)//">", rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
-    ! Try to get absolute bounds
-    call ESMF_ConfigGetAttribute(configComp, label="petListBounds:", &
-         valueList=petListBounds, default=badPet, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     ! Set services for compList
+     call ESMF_GridCompSetServices(compList(i), userRoutine=compSS, userRc=urc, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+  enddo
+  
     
-    ! If we didn't find the absolute bounds, use relative
-    if (petListBounds(1) == badPet) then
-       call ESMF_ConfigGetAttribute(configComp, label="petListBoundsRel:", &
-            valueList=petListBoundsRel, rc=rc)
-       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-            line=__LINE__, &
-            file=__FILE__)) &
-            call ESMF_Finalize(endflag=ESMF_END_ABORT)
-       
-       ! Calculate absolute bounds using relative
-       petListBounds(1)=INT(petListBoundsRel(1)*REAL(petCount-1))
-       petListBounds(2)=INT(petListBoundsRel(2)*REAL(petCount-1))    
-    endif
+  ! Loop doing a set of Reconcile tests to get an average
+  totTime=0.0
+  do t=1,numTests
+  
+     ! Create State
+     state = ESMF_StateCreate(name="State", rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-    call CreatePetList(petList, petListBounds, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
-    ! Debug output
-    !if (localPet==0) then
-    !   write(*,*) "Comp ",i," PetListBounds=",petListBounds
-    !endif
+     ! Loop over comps adding things to State
+     do i=1, compCount
     
-    call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
-      ESMF_LOGMSG_INFO, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    compList(i) = ESMF_GridCompCreate(name=trim(label), config=configComp, &
-      petList=petList, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
-    ! Get rid of PetList
-    deallocate(petList)
-
-    ! Set services for compList
-    call ESMF_GridCompSetServices(compList(i), userRoutine=compSS, userRc=urc, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
-    ! Call initialize and add things to state
-    call ESMF_GridCompInitialize(compList(i), phase=1, importState=state, &
-         userRc=urc, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-         line=__LINE__, &
-         file=__FILE__)) &
-         call ESMF_Finalize(endflag=ESMF_END_ABORT)
+        ! Call initialize and add things to state
+        call ESMF_GridCompInitialize(compList(i), phase=1, importState=state, &
+             userRc=urc, rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     enddo
     
-  enddo   
+     ! Set up timing, mem measurement, etc.
+     call ESMF_VMBarrier(vm, rc=rc)
+     call ESMF_VMLogMemInfo(prefix="before Reconcile", rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     call ESMF_TraceRegionEnter("Reconcile", rc=rc)
+     call ESMF_VMWTime(begtime, rc=rc)
+     
+     ! Reconcile State
+     call ESMF_StateReconcile(state, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     
+     ! End timing, mem measurement, etc.
+     call ESMF_VMBarrier(vm, rc=rc)
+     call ESMF_VMWTime(endTime, rc=rc)
+     call ESMF_TraceRegionExit("Reconcile", rc=rc)
+     call ESMF_VMLogMemInfo(prefix="after Reconcile", rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-  ! Set up timing, mem measurement, etc.
-  call ESMF_VMBarrier(vm, rc=rc)
-  call ESMF_VMLogMemInfo(prefix="before Reconcile", rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  call ESMF_TraceRegionEnter("Reconcile", rc=rc)
-  call ESMF_VMWTime(begtime, rc=rc)
+     ! Calc average time across PETs
+     localTime(1)=endTime-begTime
 
-  ! Reconcile State
-  call ESMF_StateReconcile(state, rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-       line=__LINE__, &
-       file=__FILE__)) &
-       call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     ! Calc Sum
+     call ESMF_VMReduce(vm, localTime, globalSumTime, 1, ESMF_REDUCE_SUM, 0, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     
+     ! Calc globalAvgTime
+     globalAvgTime=globalSumTime(1)/REAL(petCount)
+     
+     ! Output time
+!     if (localPet == 0) then
+!        write(*,*) t," For case ",trim(configfile)," on ",petCount," procs, the reconcile time =",globalAvgTime
+!     endif
 
-  ! End timing, mem measurement, etc.
-  call ESMF_VMBarrier(vm, rc=rc)
-  call ESMF_VMWTime(endTime, rc=rc)
-  call ESMF_TraceRegionExit("Reconcile", rc=rc)
-  call ESMF_VMLogMemInfo(prefix="after Reconcile", rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     totTime=totTime+globalAvgTime
+     
+     ! Destroy the State
+     call ESMF_StateDestroy(state, rc=rc)
+     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          call ESMF_Finalize(endflag=ESMF_END_ABORT)     
+  enddo ! Over tests
 
   ! Output time
   if (localPet == 0) then
-     write(*,*) "For case ",trim(configfile)," on ",petCount," procs, the reconcile time =",endTime-begTime
+     write(*,*) " For case ",trim(configfile)," on ",petCount," procs, the avg. reconcile time =",totTime/(REAL(numTests)) 
   endif
   
-  ! destroy the models and connectors
+     ! destroy the models and connectors
   do i=1, compCount
     call ESMF_GridCompDestroy(compList(i), rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
@@ -231,12 +270,6 @@ program ESMF_ReconcileStress
       call ESMF_Finalize(endflag=ESMF_END_ABORT)
   enddo
 
-  ! Destroy the State
-  call ESMF_StateDestroy(state, rc=rc)
-  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-    line=__LINE__, &
-    file=__FILE__)) &
-    call ESMF_Finalize(endflag=ESMF_END_ABORT)
   
   ! final wrap up
   call ESMF_LogWrite("ESMF_ReconcileNonNUOPC FINISHED", ESMF_LOGMSG_INFO, rc=rc)
