@@ -145,9 +145,9 @@ program ESMF_ReconcileStress
       call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
     ! Debug output
-    if (localPet==0) then
-       write(*,*) "Comp ",i," PetListBounds=",petListBounds
-    endif
+    !if (localPet==0) then
+    !   write(*,*) "Comp ",i," PetListBounds=",petListBounds
+    !endif
     
     call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
       ESMF_LOGMSG_INFO, rc=rc)
@@ -219,7 +219,7 @@ program ESMF_ReconcileStress
 
   ! Output time
   if (localPet == 0) then
-     write(*,*) "For case ",trim(configfile)," the reconcile time =",endTime-begTime
+     write(*,*) "For case ",trim(configfile)," on ",petCount," procs, the reconcile time =",endTime-begTime
   endif
   
   ! destroy the models and connectors
