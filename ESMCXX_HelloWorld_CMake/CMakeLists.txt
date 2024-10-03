@@ -1,7 +1,7 @@
 ################################################################################
 # Configuration  step:           cmake -S . -B ./build
 # Build step:                    cmake --build ./build -v
-# Execution step:                mpirun -np 8  ./build/ESMF_HelloWorld
+# Execution step:                mpirun -np 8  ./build/ESMCXX_HelloWorld
 # Clean-up step:                 rm -rf ./build PET*
 ################################################################################
 
@@ -24,13 +24,13 @@ set(CMAKE_CXX_FLAGS               "${ESMF_CXXCOMPILEOPTS}")
 set(CMAKE_C_FLAGS                 "${ESMF_CCOMPILEOPTS}")
 
 # Project
-project(ESMF_HelloWorld_CMake
+project(ESMCXX_HelloWorld_CMake
         VERSION 1.0
         LANGUAGES Fortran CXX C
         )
 
 # Executable
-add_executable(ESMF_HelloWorld ESMF_HelloWorld.F90)
+add_executable(ESMCXX_HelloWorld ESMCXX_HelloWorld.C)
 
 # Executable depends on ESMF
-target_link_libraries(ESMF_HelloWorld ESMF::ESMF)
+target_link_libraries(ESMCXX_HelloWorld ESMF::ESMC)
