@@ -26,13 +26,15 @@ program ESMF_ReconcileStress
   type(ESMF_Config)     :: config, configComp
   type(ESMF_State)      :: state
   real(ESMF_KIND_R8)    :: begTime, endTime, totTime
-  real(ESMF_KIND_R8)    :: localTime(1), globalSumTime(1)
-  real(ESMF_KIND_R8)    :: globalAvgTime
+  real(ESMF_KIND_R8)    :: localTime(1), maxTime(1)
+  real(ESMF_KIND_R8)    :: minTimeAcrossTests
+  real(ESMF_KIND_R8)    :: globalMaxTime
   real(ESMF_KIND_R8)    :: petListBoundsRel(2)
   integer               :: numArgs
   integer,parameter     :: badPet=-1
-  integer,parameter     :: numTests=5
+  integer,parameter     :: numTests=1
   integer :: t
+  integer :: l
   
   ! start up
   call ESMF_Initialize(vm=vm, rc=rc)
@@ -50,7 +52,11 @@ program ESMF_ReconcileStress
     line=__LINE__, &
     file=__FILE__)) &
     call ESMF_Finalize(endflag=ESMF_END_ABORT)
-
+#if 0
+#ifdef ESMF_VERSION_STRING_GIT
+  print *, "Version", ESMF_VERSION_STRING_GIT
+#endif
+#endif
   ! config
   config = ESMF_ConfigCreate(rc=rc)
   if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
@@ -111,39 +117,19 @@ program ESMF_ReconcileStress
           line=__LINE__, &
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)
-     
-     ! Try to get absolute bounds
-     call ESMF_ConfigGetAttribute(configComp, label="petListBounds:", &
-          valueList=petListBounds, default=badPet, rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          call ESMF_Finalize(endflag=ESMF_END_ABORT)
-     
-     ! If we didn't find the absolute bounds, use relative
-     if (petListBounds(1) == badPet) then
-        call ESMF_ConfigGetAttribute(configComp, label="petListBoundsRel:", &
-             valueList=petListBoundsRel, rc=rc)
-        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-             line=__LINE__, &
-             file=__FILE__)) &
-             call ESMF_Finalize(endflag=ESMF_END_ABORT)
-        
-        ! Calculate absolute bounds using relative
-        petListBounds(1)=INT(petListBoundsRel(1)*REAL(petCount-1))
-        petListBounds(2)=INT(petListBoundsRel(2)*REAL(petCount-1))    
-     endif
-        
-     call CreatePetList(petList, petListBounds, rc=rc)
+
+
+     ! Get PetList from config file
+     call GetCompPetList(configComp, petList, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)
      
      ! Debug output
-     !if (localPet==0) then
-     !   write(*,*) "Comp ",i," PetListBounds=",petListBounds
-     !endif
+     if (localPet==0) then
+        write(*,*) "Comp ",i," PetListBounds=",petListBounds
+     endif
      
      call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
           ESMF_LOGMSG_INFO, rc=rc)
@@ -175,7 +161,7 @@ program ESMF_ReconcileStress
   
     
   ! Loop doing a set of Reconcile tests to get an average
-  totTime=0.0
+  minTimeAcrossTests=1.0E20 ! Set to large time
   do t=1,numTests
   
      ! Create State
@@ -228,25 +214,40 @@ program ESMF_ReconcileStress
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
-     ! Calc average time across PETs
+     ! Calc max time across PETs
      localTime(1)=endTime-begTime
 
-     ! Calc Sum
-     call ESMF_VMReduce(vm, localTime, globalSumTime, 1, ESMF_REDUCE_SUM, 0, rc=rc)
+     ! Calc Max
+     call ESMF_VMReduce(vm, localTime, maxTime, 1, ESMF_REDUCE_MAX, 0, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)
      
      ! Calc globalAvgTime
-     globalAvgTime=globalSumTime(1)/REAL(petCount)
+     globalMaxTime=maxTime(1)
      
      ! Output time
 !     if (localPet == 0) then
 !        write(*,*) t," For case ",trim(configfile)," on ",petCount," procs, the reconcile time =",globalAvgTime
 !     endif
 
-     totTime=totTime+globalAvgTime
+     ! Find min time
+     if (globalMaxTime < minTimeAcrossTests) minTimeAcrossTests=globalMaxTime
+
+#if 0
+     ! DON"T DO THIS UNTIL WE MOVE THE Comp creation into the loop
+     ! Loop over comps destroying them
+     do i=1, compCount
+    
+        ! Get rid component
+        call ESMF_GridCompDestroy(compList(i), rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     enddo
+#endif
      
      ! Destroy the State
      call ESMF_StateDestroy(state, rc=rc)
@@ -258,7 +259,7 @@ program ESMF_ReconcileStress
 
   ! Output time
   if (localPet == 0) then
-     write(*,*) " For case ",trim(configfile)," on ",petCount," procs, the avg. reconcile time =",totTime/(REAL(numTests)) 
+     write(*,*) "For case ",trim(configfile)," on ",petCount," procs, the min reconcile time =",minTimeAcrossTests
   endif
   
      ! destroy the models and connectors
@@ -287,7 +288,9 @@ program ESMF_ReconcileStress
  !------------------------------------------------------------------------------
  contains
  !------------------------------------------------------------------------------
-  
+
+
+   
   subroutine CreatePetList(petList, petListBounds, rc)
     integer, allocatable  :: petList(:)
     integer, intent(in)   :: petListBounds(2)
@@ -307,63 +310,98 @@ program ESMF_ReconcileStress
     enddo
     
   end subroutine
-  
-  !-----------------------------------------------------------------------------
 
-  subroutine MergePetLists(outPetList, inPetList1, inPetList2, rc)
-    integer, allocatable  :: outPetList(:)
-    integer, intent(in)   :: inPetList1(:)
-    integer, intent(in)   :: inPetList2(:)
+
+  subroutine GetCompPetList(configComp, petList, rc)
+    type(ESMF_Config)     :: configComp
+    integer, allocatable  :: petList(:)
     integer, intent(out)  :: rc
+
+    integer :: localrc
+    real(ESMF_KIND_R8)    :: petListBoundsRel(2)
+    integer,parameter     :: badPet=-1
     
-    integer, allocatable :: tempPetList(:)
-    integer :: i, j, jj, size1, size2
-    logical :: duplicate
+     ! Try to get absolute bounds
+     call ESMF_ConfigGetAttribute(configComp, label="petListBounds:", &
+          valueList=petListBounds, default=badPet, rc=localrc)
+     if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__, rctoReturn=rc)) return
+     
+     ! If we didn't find the absolute bounds, use relative
+     if (petListBounds(1) == badPet) then
+        l=ESMF_ConfigGetLen(configComp, label="petListBoundsRel:", &
+             rc=rc)
+     !   write(*,*) "PL length=",l
+        call ESMF_ConfigGetAttribute(configComp, label="petListBoundsRel:", &
+             valueList=petListBoundsRel, rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__, rctoReturn=rc)) return
+        
+        ! Calculate absolute bounds using relative
+        petListBounds(1)=INT(petListBoundsRel(1)*REAL(petCount-1))
+        petListBounds(2)=INT(petListBoundsRel(2)*REAL(petCount-1))    
+     endif
+        
+     call CreatePetList(petList, petListBounds, rc=localrc)
+     if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__, rctoReturn=rc)) return
     
-    rc = ESMF_SUCCESS
     
-    size1 = size(inPetList1)
-    size2 = size(inPetList2)
     
-    allocate(tempPetList(size1+size2))  ! definitely large enough
-    
-    if (size1 >= size2) then
-      tempPetList(1:size1) = inPetList1(1:size1)
-      jj = size1
-      do i=1, size2
-        duplicate = .false.
-        do j=1, jj
-          if (inPetList2(i)==tempPetList(j)) then
-            duplicate = .true.
-            exit
-          endif
-        enddo
-        if (.not.duplicate) then
-          jj = jj + 1
-          tempPetList(jj) = inPetList2(i)
-        endif
-      enddo
-    else
-      tempPetList(1:size2) = inPetList2(1:size2)
-      jj = size2
-      do i=1, size1
-        duplicate = .false.
-        do j=1, jj
-          if (inPetList1(i)==tempPetList(j)) then
-            duplicate = .true.
-            exit
-          endif
-        enddo
-        if (.not.duplicate) then
-          jj = jj + 1
-          tempPetList(jj) = inPetList1(i)
-        endif
-      enddo
-    endif
-    
-    allocate(outPetList(jj))
-    outPetList(1:jj) = tempPetList(1:jj)
-    
+    ! Return success
+    rc = ESMF_SUCCESS    
   end subroutine
 
+  
+#if 0
+  ! See if the JASON stuff makes this unnecessary
+subroutine CheckState(state, config, isOk, rc)
+  type(ESMF_Config)     :: config
+  type(ESMF_State)      :: state
+  logical               :: isOk
+  integer, intent(out)  :: rc
+
+  integer :: localrc
+  integer ::c,compCount
+  character(ESMF_MAXSTR) :: label
+  type(ESMF_Config)      :: configComp
+  
+  ! Init
+  isOk=.true.
+
+  ! Get the number of components
+  call ESMF_ConfigGetAttribute(config, label="compCount:", value=compCount, &
+       rc=localrc)
+  if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+       line=__LINE__, &
+       file=__FILE__, rcToReturn=rc)) return
+
+  
+  ! Check components
+  do c=1, compCount
+
+     ! Get component config information
+     write(label,"('comp-',I2.2)") i
+     configComp = ESMF_ConfigCreate(config, &
+          Openlabel="<"//Trim(label)//":", &
+          closelabel=":"//trim(label)//">", rc=localrc)
+     if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+       line=__LINE__, &
+       file=__FILE__, rcToReturn=rc)) return
+
+
+     
+
+  enddo
+  
+  ! Return success
+  rc = ESMF_SUCCESS
+  
+end subroutine CheckState  
+#endif  
+
+  
 end program
