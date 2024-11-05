@@ -31,8 +31,7 @@ program ESMF_ReconcileStress
   real(ESMF_KIND_R8)    :: globalMaxTime
   real(ESMF_KIND_R8)    :: petListBoundsRel(2)
   integer               :: numArgs
-  integer,parameter     :: badPet=-1
-  integer,parameter     :: numTests=1
+  integer,parameter     :: numTests=5
   integer :: t
   integer :: l
   
@@ -103,67 +102,68 @@ program ESMF_ReconcileStress
        line=__LINE__, &
        file=__FILE__)) &
        call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  
-  
-  ! Create components
+
+  ! Create component list
   allocate(compList(compCount))
-  do i=1, compCount
-     
-     ! Get component bounds
-     write(label,"('comp-',I2.2)") i
-     configComp = ESMF_ConfigCreate(config, openlabel="<"//trim(label)//":", &
-          closelabel=":"//trim(label)//">", rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          call ESMF_Finalize(endflag=ESMF_END_ABORT)
+  
+  ! Loop doing a set of Reconcile tests to get a more accurate time
+  minTimeAcrossTests=HUGE(minTimeAcrossTests) ! Set to large time
+  do t=1,numTests
 
+  ! Create components
+     do i=1, compCount
+        
+        ! Get component bounds
+        write(label,"('comp-',I2.2)") i
+        configComp = ESMF_ConfigCreate(config, openlabel="<"//trim(label)//":", &
+             closelabel=":"//trim(label)//">", rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+        
+        
+        ! Get PetList from config file
+        call GetCompPetList(configComp, petList, rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+        
+        ! Debug output
+        if (localPet==0) then
+           write(*,*) "Comp ",i," PetListBounds=",petListBounds
+        endif
+     
+        call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
+             ESMF_LOGMSG_INFO, rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+        compList(i) = ESMF_GridCompCreate(name=trim(label), config=configComp, &
+             petList=petList, rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     
+        ! Get rid of PetList
+        deallocate(petList)
 
-     ! Get PetList from config file
-     call GetCompPetList(configComp, petList, rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          call ESMF_Finalize(endflag=ESMF_END_ABORT)
-     
-     ! Debug output
-     if (localPet==0) then
-        write(*,*) "Comp ",i," PetListBounds=",petListBounds
-     endif
-     
-     call ESMF_LogWrite("Creating '"//trim(label)//"' component.", &
-          ESMF_LOGMSG_INFO, rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          call ESMF_Finalize(endflag=ESMF_END_ABORT)
-     compList(i) = ESMF_GridCompCreate(name=trim(label), config=configComp, &
-          petList=petList, rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          call ESMF_Finalize(endflag=ESMF_END_ABORT)
-     
-     ! Get rid of PetList
-     deallocate(petList)
-
-     ! Set services for compList
-     call ESMF_GridCompSetServices(compList(i), userRoutine=compSS, userRc=urc, rc=rc)
-     if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          call ESMF_Finalize(endflag=ESMF_END_ABORT)
-     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
-          call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  enddo
+        ! Set services for compList
+        call ESMF_GridCompSetServices(compList(i), userRoutine=compSS, userRc=urc, rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=urc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+             line=__LINE__, &
+             file=__FILE__)) &
+             call ESMF_Finalize(endflag=ESMF_END_ABORT)
+     enddo
   
     
-  ! Loop doing a set of Reconcile tests to get an average
-  minTimeAcrossTests=1.0E20 ! Set to large time
-  do t=1,numTests
-  
      ! Create State
      state = ESMF_StateCreate(name="State", rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
@@ -171,9 +171,10 @@ program ESMF_ReconcileStress
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)
 
+     
      ! Loop over comps adding things to State
      do i=1, compCount
-    
+        
         ! Call initialize and add things to state
         call ESMF_GridCompInitialize(compList(i), phase=1, importState=state, &
              userRc=urc, rc=rc)
@@ -186,7 +187,8 @@ program ESMF_ReconcileStress
              file=__FILE__)) &
              call ESMF_Finalize(endflag=ESMF_END_ABORT)
      enddo
-    
+
+     
      ! Set up timing, mem measurement, etc.
      call ESMF_VMBarrier(vm, rc=rc)
      call ESMF_VMLogMemInfo(prefix="before Reconcile", rc=rc)
@@ -217,26 +219,17 @@ program ESMF_ReconcileStress
      ! Calc max time across PETs
      localTime(1)=endTime-begTime
 
-     ! Calc Max
+     ! Calc max across PETs
      call ESMF_VMReduce(vm, localTime, maxTime, 1, ESMF_REDUCE_MAX, 0, rc=rc)
      if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)
      
-     ! Calc globalAvgTime
-     globalMaxTime=maxTime(1)
+     ! Update min time
+     if (maxTime(1) < minTimeAcrossTests) minTimeAcrossTests=maxTime(1)
      
-     ! Output time
-!     if (localPet == 0) then
-!        write(*,*) t," For case ",trim(configfile)," on ",petCount," procs, the reconcile time =",globalAvgTime
-!     endif
 
-     ! Find min time
-     if (globalMaxTime < minTimeAcrossTests) minTimeAcrossTests=globalMaxTime
-
-#if 0
-     ! DON"T DO THIS UNTIL WE MOVE THE Comp creation into the loop
      ! Loop over comps destroying them
      do i=1, compCount
     
@@ -247,7 +240,6 @@ program ESMF_ReconcileStress
              file=__FILE__)) &
              call ESMF_Finalize(endflag=ESMF_END_ABORT)
      enddo
-#endif
      
      ! Destroy the State
      call ESMF_StateDestroy(state, rc=rc)
@@ -255,22 +247,15 @@ program ESMF_ReconcileStress
           line=__LINE__, &
           file=__FILE__)) &
           call ESMF_Finalize(endflag=ESMF_END_ABORT)     
+
   enddo ! Over tests
 
+  
   ! Output time
   if (localPet == 0) then
      write(*,*) "For case ",trim(configfile)," on ",petCount," procs, the min reconcile time =",minTimeAcrossTests
   endif
   
-     ! destroy the models and connectors
-  do i=1, compCount
-    call ESMF_GridCompDestroy(compList(i), rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      call ESMF_Finalize(endflag=ESMF_END_ABORT)
-  enddo
-
   
   ! final wrap up
   call ESMF_LogWrite("ESMF_ReconcileNonNUOPC FINISHED", ESMF_LOGMSG_INFO, rc=rc)
