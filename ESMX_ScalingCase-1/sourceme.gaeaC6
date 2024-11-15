@@ -1,0 +1,6 @@
+module load PrgEnv-intel git cmake
+module load intel-oneapi/2023.2.0 cray-mpich/8.1.28
+module load cray-hdf5/1.14.3.1 cray-netcdf/4.9.0.13
+
+setenv ESMFMKFILE /gpfs/f6/scratch/Gerhard.Theurich/StateReconcileWork/esmf/lib/libO/Unicos.intel.64.mpi.default/esmf.mk
+
