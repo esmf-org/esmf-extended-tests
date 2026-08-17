@@ -12,6 +12,21 @@
 # Set ESMFMKFILE as defined by system env variable. If it's not explicitly set
 # try to find esmf.mk file in default locations (ESMF_ROOT, CMAKE_PREFIX_PATH,
 # etc)
+
+# - Common Usage
+#
+# Where to look for this FindESMF.cmake file
+#   list(APPEND CMAKE_MODULE_PATH "<PATH_TO_THIS_FILE>")
+#   <PATH_TO_THIS_FILE> is to be replaced with the directory for this file
+#
+# How to locate ESMF libraries and create target
+#   find_package(ESMF <X.Y.Z> MODULE REQUIRED)
+#   <X.Y.Z> is to be replaced with the minimum version required
+#
+# How to link targets
+#   target_link_libraries(<CMAKE_TARGET> PUBLIC ESMF::ESMF)
+#   <CMAKE_TARGET> is to be replaced with your CMake target
+
 if(NOT DEFINED ESMFMKFILE)
   if(NOT DEFINED ENV{ESMFMKFILE})
     find_path(ESMFMKFILE_PATH esmf.mk PATH_SUFFIXES lib lib64)
@@ -115,9 +130,15 @@ if(EXISTS ${ESMFMKFILE})
     endif()
   endif()
 
-  # Add ESMF as an alias to ESMF::ESMF for backward compatibility
+  # Add aliases for ESMF and ESMC
+  if(NOT TARGET ESMF::ESMF_Fortran)
+    add_library(ESMF::ESMF_Fortran ALIAS ESMF::ESMF)
+  endif()
   if(NOT TARGET ESMF)
     add_library(ESMF ALIAS ESMF::ESMF)
+  endif()
+  if(NOT TARGET ESMF::ESMF_C)
+    add_library(ESMF::ESMF_C ALIAS ESMF::ESMC)
   endif()
 
   # Add ESMF include directories
@@ -134,9 +155,15 @@ if(EXISTS ${ESMFMKFILE})
     list(APPEND ESMC_INCLUDE_DIRECTORIES ${_ITEM})
   endforeach()
 
-  # Add ESMF link libraries
-  string(STRIP "${ESMF_F90LINKRPATHS} ${ESMF_F90ESMFLINKRPATHS} ${ESMF_F90ESMFLINKPATHS} ${ESMF_F90LINKPATHS} ${ESMF_F90LINKLIBS} ${ESMF_F90LINKOPTS}" ESMF_INTERFACE_LINK_LIBRARIES)
-  string(STRIP "${ESMF_CLINKRPATHS} ${ESMF_CESMFLINKRPATHS} ${ESMF_CESMFLINKPATHS} ${ESMF_CLINKPATHS} ${ESMF_CLINKLIBS} ${ESMF_CLINKOPTS}" ESMC_INTERFACE_LINK_LIBRARIES)
+  # Parse raw, space-separated ESMF link flags into native CMake lists.
+  # Converting options and libraries into lists allows CMake to manage them
+  # safely (e.g., handling spaces in paths, list operations, and deduplication).
+  set(RAW_ESMF_INTERFACE_LINK_LIBRARIES "${ESMF_F90LINKRPATHS} ${ESMF_F90ESMFLINKRPATHS} ${ESMF_F90ESMFLINKPATHS} ${ESMF_F90LINKPATHS} ${ESMF_F90LINKLIBS}")
+  separate_arguments(ESMF_INTERFACE_LINK_LIBRARIES UNIX_COMMAND "${RAW_ESMF_INTERFACE_LINK_LIBRARIES}")
+  separate_arguments(ESMF_INTERFACE_LINK_OPTIONS UNIX_COMMAND "${ESMF_F90LINKOPTS}")
+  set(RAW_ESMC_INTERFACE_LINK_LIBRARIES "${ESMF_CLINKRPATHS} ${ESMF_CESMFLINKRPATHS} ${ESMF_CESMFLINKPATHS} ${ESMF_CLINKPATHS} ${ESMF_CLINKLIBS}")
+  separate_arguments(ESMC_INTERFACE_LINK_LIBRARIES UNIX_COMMAND "${RAW_ESMC_INTERFACE_LINK_LIBRARIES}")
+  separate_arguments(ESMC_INTERFACE_LINK_OPTIONS UNIX_COMMAND "${ESMF_CLINKOPTS}")
 
   # Finalize find_package
   include(FindPackageHandleStandardArgs)
@@ -148,17 +175,20 @@ if(EXISTS ${ESMFMKFILE})
                       ESMC_INCLUDE_DIRECTORIES
                       ESMF_INTERFACE_LINK_LIBRARIES
                       ESMC_INTERFACE_LINK_LIBRARIES
+                      ESMF_F90COMPILEPATHS
         VERSION_VAR ESMF_VERSION)
 
   set_target_properties(ESMF::ESMF PROPERTIES
         IMPORTED_LOCATION "${ESMF_LIBRARY_LOCATION}"
         INTERFACE_INCLUDE_DIRECTORIES "${ESMF_INCLUDE_DIRECTORIES}"
-        INTERFACE_LINK_LIBRARIES "${ESMF_INTERFACE_LINK_LIBRARIES}")
+        INTERFACE_LINK_LIBRARIES "${ESMF_INTERFACE_LINK_LIBRARIES}"
+        INTERFACE_LINK_OPTIONS "${ESMF_INTERFACE_LINK_OPTIONS}")
 
   set_target_properties(ESMF::ESMC PROPERTIES
         IMPORTED_LOCATION "${ESMF_LIBRARY_LOCATION}"
         INTERFACE_INCLUDE_DIRECTORIES "${ESMC_INCLUDE_DIRECTORIES}"
-        INTERFACE_LINK_LIBRARIES "${ESMC_INTERFACE_LINK_LIBRARIES}")
+        INTERFACE_LINK_LIBRARIES "${ESMC_INTERFACE_LINK_LIBRARIES}"
+        INTERFACE_LINK_OPTIONS "${ESMC_INTERFACE_LINK_OPTIONS}")
 
 else()
   set(ESMF_FOUND FALSE CACHE BOOL "esmf.mk file NOT found" FORCE)
