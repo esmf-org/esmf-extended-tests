@@ -3,7 +3,7 @@
 # Input data for the RegridWeightGenCheck external demo
 
 # total number of test cases
-166
+170
 
 # source_grid : destination_grid : method : options : Mean Rel Error : Max Rel Error : Conservation Error
 
@@ -282,3 +282,9 @@ ll2.5deg_grid.nc : ll1deg_grid.nc    : patch : -p none --extrap_method creep --e
 # Test for --checkFlag
 # We don't have a way to count a failing test as a passing one right now, so this just makes sure --checkFlag doesn't cause a problem.
 ll1deg_grid.nc : ll2.5deg_grid.nc : conserve : --checkFlag  : 10E-04 : 10E-04 : 10E-13
+
+# Binning regridding
+ne30np4_esmf.nc : ne30np4_esmf.nc  : binning :  --src_loc center : 10E-14 : 10E-14 : 10E-16
+mpas_uniform_10242.nc : mpas_uniform_10242.nc : binning :  --src_loc center : 10E-14 : 10E-14 : 10E-16
+FVCOM_grid2d.nc : FVCOM_grid2d.nc : binning :  --src_loc center : 10E-14 : 10E-14 : 10E-16
+mpas_uniform_10242_dual.nc : mpas_uniform_10242_dual.nc : binning :  --src_loc center : 10E-14 : 10E-14 : 10E-16
